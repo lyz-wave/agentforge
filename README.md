@@ -9,7 +9,7 @@
 ---
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="AgentForge Demo" width="600">
+  <img src="docs/assets/demo.gif" alt="AgentForge Demo" width="800">
 </p>
 
 <p align="center">
