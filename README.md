@@ -5,6 +5,9 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-0.1.0-orange.svg)](https://github.com/lyz-wave/agentforge)
+[![Stars](https://img.shields.io/github/stars/lyz-wave/agentforge.svg)](https://github.com/lyz-wave/agentforge/stargazers)
+[![Forks](https://img.shields.io/github/forks/lyz-wave/agentforge.svg)](https://github.com/lyz-wave/agentforge/network/members)
+[![Issues](https://img.shields.io/github/issues/lyz-wave/agentforge.svg)](https://github.com/lyz-wave/agentforge/issues)
 
 ---
 
@@ -354,6 +357,64 @@ ruff check agentforge/
 
 ---
 
+## 🗺️ 路线图
+
+### v0.2.0 (计划中)
+
+- [ ] 添加更多内置工具（edit_file、search、web_request）
+- [ ] 支持流式输出
+- [ ] 添加会话持久化
+- [ ] 支持多模型切换
+
+### v0.3.0 (计划中)
+
+- [ ] 实现完整的 MCP 服务器
+- [ ] 添加 Web UI 界面
+- [ ] 支持插件系统
+- [ ] 添加性能监控
+
+### v1.0.0 (长期目标)
+
+- [ ] 生产级稳定性
+- [ ] 完整的文档和教程
+- [ ] 社区生态建设
+
+---
+
+## ❓ FAQ
+
+### Q: AgentForge 和 Claude Code 有什么区别？
+
+A: AgentForge 是基于 Claude Code 架构设计的开源框架，主要区别：
+- **开源** - 完全开源，可以自由修改和扩展
+- **多模型支持** - 支持 OpenAI、小米 MiMo 等多种模型
+- **模块化设计** - 8 个独立模块，可按需使用
+- **CLI 优先** - 专注于命令行交互体验
+
+### Q: 支持哪些 LLM 模型？
+
+A: 目前支持：
+- OpenAI GPT 系列
+- 小米 MiMo 系列
+- 任何 OpenAI API 兼容的模型
+
+### Q: 如何添加自定义工具？
+
+A: 只需两步：
+1. 在 `agent/tools/` 目录创建新的工具文件
+2. 在 `TOOL_HANDLERS` 字典中注册处理函数
+
+### Q: 项目适合什么场景？
+
+A: 适合以下场景：
+- 自动化运维任务
+- 文件批量处理
+- 代码生成和修改
+- 数据分析和处理
+- 任何需要 AI 辅助的命令行任务
+
+---
+
 ## 📝 更新日志
 
 ### v0.1.0 (2026-06-24)
@@ -373,7 +434,13 @@ ruff check agentforge/
 
 ## 🤝 贡献
 
-欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+欢迎贡献！请遵循以下步骤：
+
+1. Fork 本仓库
+2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
 
 ---
 
