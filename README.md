@@ -8,6 +8,16 @@
 
 ---
 
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="AgentForge Demo" width="600">
+</p>
+
+<p align="center">
+  <em>AgentForge CLI 交互演示</em>
+</p>
+
+---
+
 ## 📖 项目简介
 
 AgentForge 是一个基于 Claude Code 架构设计的智能 Agent 框架，实现了完整的 **Harness Engineering** 模式。它将 Agent 的核心能力（感知、推理、行动）与运行环境（工具、知识、权限）分离，提供了高度可扩展的 Agent 开发框架。
@@ -50,10 +60,8 @@ pip install -e .
 ```bash
 # 小米 MiMo API
 OPENAI_API_KEY=your_a...n
-OPENAI_BASE_URL=https://api.xiaomimimo.com/v1
-
 # 或者使用 OpenAI
-# OPENAI_API_KEY=your_openai_key
+# OPENAI_API_KEY=your_o...y
 # OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
