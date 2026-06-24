@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "agentforge"
+version = "0.1.0"
+description = "智能任务自动化框架 - 基于 Claude Code 架构的现代 Agent 框架"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "lyz-wave", email = "754861969@qq.com"}
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+anthropic = [
+    "anthropic>=0.18.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/lyz-wave/agentforge"
+Repository = "https://github.com/lyz-wave/agentforge"
+Issues = "https://github.com/lyz-wave/agentforge/issues"
+
+[project.scripts]
+agentforge = "agentforge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agentforge*"]
