@@ -1,40 +1,138 @@
-# 录制 GIF 动图指南
+# 🎬 AgentForge CLI 录制指南
 
-## 📹 推荐工具
+## 📋 推荐录制内容
 
-### Windows 用户
+### 场景列表
 
-**ScreenToGif** (推荐)
-- 下载: https://www.screentogif.com/
-- 优点: 简单易用，支持编辑
+| # | 场景 | 时长 | 展示内容 |
+|---|------|------|----------|
+| 1 | 启动 CLI | 3-5秒 | 彩色 Banner、版本号 |
+| 2 | 列出文件 | 5-8秒 | bash 工具、文件列表 |
+| 3 | 读取文件 | 5-8秒 | read_file 工具、内容预览 |
+| 4 | 搜索文件 | 5-8秒 | glob 工具、搜索结果 |
+| 5 | 创建文件 | 5-8秒 | write_file 工具、自然语言理解 |
+| 6 | 执行文件 | 5-8秒 | bash 工具、脚本执行 |
+| 7 | 帮助命令 | 3-5秒 | 命令列表、使用说明 |
+| 8 | 退出 | 2-3秒 | 友好退出 |
 
-**使用步骤:**
-1. 下载安装 ScreenToGif
+**总时长：约 35-55 秒**
+
+---
+
+## 🎯 核心亮点
+
+### 必须展示的功能
+
+1. **工具自动调用** - Agent 自动选择合适的工具
+2. **自然语言理解** - 用中文描述任务
+3. **多轮对话** - 上下文理解
+4. **彩色输出** - 美观的终端界面
+5. **命令系统** - /help, /exit 等命令
+
+### 展示顺序
+
+```
+启动 → 基本工具 → 文件操作 → 搜索 → 创建 → 执行 → 帮助 → 退出
+```
+
+---
+
+## 🛠️ 录制方法
+
+### 方法 1: ScreenToGif (Windows 推荐)
+
+1. 下载安装 [ScreenToGif](https://www.screentogif.com/)
 2. 打开软件，点击"录制"
 3. 调整录制区域覆盖终端窗口
-4. 运行 `python scripts/demo_gif.py` 或 `python run_cli.py`
-5. 停止录制
-6. 编辑（可选）→ 导出为 GIF
+4. 运行真实 CLI：
+   ```bash
+   cd C:\Users\Admin\Desktop\MyAgent
+   python run_cli.py
+   ```
+5. 按照场景列表输入命令
+6. 停止录制，编辑并导出为 GIF
 7. 保存到 `docs/assets/demo.gif`
 
-### 跨平台
+### 方法 2: 使用演示脚本录制
 
-**asciinema + agg**
 ```bash
-# 安装
-pip install asciinema agg
+# 运行完整演示脚本
+python scripts/full_demo.py
 
-# 录制
-asciinema rec demo.cast
-
-# 运行演示
+# 或者运行快速演示
 python scripts/demo_gif.py
-
-# 停止录制 (Ctrl+D)
-
-# 转换为 GIF
-agg demo.cast demo.gif
 ```
+
+### 方法 3: Python 生成 GIF
+
+```bash
+# 安装依赖
+pip install Pillow
+
+# 生成 GIF
+python scripts/generate_gif.py
+```
+
+---
+
+## 📝 录制脚本
+
+### 快速演示（15秒）
+
+```bash
+python scripts/demo_gif.py
+```
+
+### 完整演示（55秒）
+
+```bash
+python scripts/full_demo.py
+```
+
+### 自定义演示
+
+```bash
+python run_cli.py
+
+# 手动输入以下命令
+❯ 列出当前目录的文件
+❯ 读取 README.md 的前 3 行
+❯ 搜索所有 Python 文件
+❯ 创建一个 hello.py 文件
+❯ 运行 hello.py
+❯ /help
+❯ /exit
+```
+
+---
+
+## 💡 录制技巧
+
+### 终端设置
+
+| 设置 | 推荐值 |
+|------|--------|
+| 窗口大小 | 80x24 或更小 |
+| 字体大小 | 14-16px |
+| 配色方案 | One Dark / Dracula |
+| 背景 | 深色（#282c34） |
+
+### 录制技巧
+
+1. **输入速度** - 适中，不要太快
+2. **等待时间** - 工具执行后等 0.5-1 秒
+3. **清晰度** - 确保文字清晰可见
+4. **时长控制** - 30-60 秒最佳
+5. **文件大小** - 控制在 5MB 以内
+
+### 后期编辑
+
+1. 删除多余等待时间
+2. 调整播放速度（1x 或 1.5x）
+3. 裁剪空白区域
+4. 添加标题（可选）
+
+---
 
 ## 📁 文件位置
 
@@ -42,95 +140,43 @@ agg demo.cast demo.gif
 agentforge/
 ├── docs/
 │   └── assets/
-│       ├── demo.gif          # 主演示 GIF
-│       ├── cli-demo.gif      # CLI 演示
-│       └── agent-loop.gif    # Agent Loop 演示
-└── scripts/
-    └── demo_gif.py           # 演示脚本
+│       └── demo.gif          # 录制的 GIF
+│
+├── scripts/
+│   ├── demo_gif.py           # 快速演示脚本
+│   ├── full_demo.py          # 完整演示脚本
+│   └── generate_gif.py       # Python 生成 GIF
+│
+└── README.md                 # 引用 GIF
 ```
 
-## 📝 在 README 中引用
+---
 
-### 基本引用
-
-```markdown
-![AgentForge Demo](docs/assets/demo.gif)
-```
-
-### 带标题
+## 🔗 在 README 中引用
 
 ```markdown
 <p align="center">
   <img src="docs/assets/demo.gif" alt="AgentForge Demo" width="600">
 </p>
 
-<p align="center">AgentForge CLI 交互演示</p>
-```
-
-### 多个 GIF
-
-```markdown
-## 演示
-
-### CLI 交互
-
-![CLI Demo](docs/assets/cli-demo.gif)
-
-### Agent Loop
-
-![Agent Loop](docs/assets/agent-loop.gif)
-```
-
-## 🎬 演示脚本
-
-### 自动演示
-
-```bash
-python scripts/demo_gif.py
-```
-
-### 手动演示
-
-```bash
-# 启动 CLI
-python run_cli.py
-
-# 输入以下命令
-❯ 列出当前目录的文件
-❯ 读取 README.md 的内容
-❯ 搜索所有 Python 文件
-❯ /help
-❯ /exit
-```
-
-## 💡 录制技巧
-
-1. **终端窗口大小** - 建议 80x24 或更小，确保 GIF 不会太大
-2. **字体大小** - 使用较大字体，确保在 GIF 中清晰可见
-3. **配色方案** - 使用深色背景 + 亮色文字（如 One Dark、Dracula）
-4. **录制速度** - 适当放慢输入速度，让观众能看清
-5. **GIF 时长** - 建议 10-30 秒，不要太长
-6. **文件大小** - 控制在 5MB 以内，GitHub README 支持最大 10MB
-
-## 🔧 优化 GIF
-
-### 使用 ScreenToGif 编辑
-
-1. 删除不必要的等待时间
-2. 调整播放速度（建议 1x 或 1.5x）
-3. 裁剪空白区域
-4. 降低帧率（10-15 FPS 足够）
-
-### 压缩 GIF
-
-```bash
-# 使用 gifsicle 压缩
-gifsicle -O3 demo.gif -o demo-optimized.gif
-
-# 降低颜色数
-gifsicle -O3 --colors 64 demo.gif -o demo-small.gif
+<p align="center">
+  <em>AgentForge CLI 交互演示</em>
+</p>
 ```
 
 ---
 
-**录制完成后，将 GIF 放到 `docs/assets/` 目录，然后在 README 中引用即可！** 🎉
+## ✅ 录制检查清单
+
+- [ ] 启动画面清晰
+- [ ] 工具调用展示完整
+- [ ] 自然语言理解准确
+- [ ] 输出结果正确
+- [ ] 命令系统正常
+- [ ] 时长控制在 60 秒内
+- [ ] 文件大小 < 5MB
+- [ ] 文字清晰可读
+
+---
+
+**录制完成后，替换 `docs/assets/demo.gif` 并推送到 GitHub！** 🎉
