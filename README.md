@@ -251,6 +251,24 @@ python run_cli.py
 
 ---
 
+## 📚 系列教程
+
+本项目配套完整的系列教程，帮助你从零理解 Agent 框架的每一个核心模块。
+
+| # | 教程 | 主题 |
+|---|------|------|
+| 0 | [教程总览](agentforge/tutorials/teach-index.html) | 全局架构与模块导航 |
+| 1 | [Agent Loop 核心循环](agentforge/tutorials/teach-agent-loop.html) | while True + stop_reason 的最小内核 |
+| 2 | [工具系统](agentforge/tutorials/teach-tool-system.html) | 工具注册、执行与安全截断 |
+| 3 | [权限系统](agentforge/tutorials/teach-permission-system.html) | 三道闸门安全机制 |
+| 4 | [Hook 扩展系统](agentforge/tutorials/teach-hook-system.html) | 4 个核心事件与可插拔扩展 |
+| 5 | [任务规划系统](agentforge/tutorials/teach-planning-system.html) | TodoWrite + TaskManager 任务分解 |
+| 6 | [记忆系统](agentforge/tutorials/teach-memory-system.html) | SQLite 持久化与上下文压缩 |
+| 7 | [团队协作](agentforge/tutorials/teach-team-collaboration.html) | 消息总线 + 异步邮箱 |
+| 8 | [MCP 集成](agentforge/tutorials/teach-mcp-integration.html) | Model Context Protocol 扩展 |
+| 9 | [CLI 交互界面](agentforge/tutorials/teach-cli.html) | 命令行交互与斜杠命令 |
+| 10 | [教程总结](agentforge/tutorials/teach-summary.html) | 全模块串联与扩展思路 |
+
 ## 📊 项目统计
 
 | 指标 | 数量 |
