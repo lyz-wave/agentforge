@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Loop 教学 — 从零开始理解 Agent 的心脏</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap');
+
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-code: #1a1a2e;
+  --accent: #ff6b35;
+  --accent-glow: rgba(255, 107, 53, 0.15);
+  --accent2: #00d4aa;
+  --accent2-glow: rgba(0, 212, 170, 0.1);
+  --accent3: #7c5cfc;
+  --text: #e8e6e3;
+  --text-dim: #8a8a9a;
+  --text-bright: #ffffff;
+  --correct: #00d4aa;
+  --wrong: #ff4757;
+  --border: rgba(255,255,255,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--bg-deep);
+}
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text);
+  line-height: 1.8;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+/* === HERO === */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 40%, rgba(255,107,53,0.08), transparent),
+    radial-gradient(ellipse 500px 500px at 70% 60%, rgba(124,92,252,0.06), transparent),
+    radial-gradient(ellipse 400px 300px at 50% 80%, rgba(0,212,170,0.05), transparent);
+  pointer-events: none;
+}
+
+.hero-badge {
+  display: inline-block;
+  background: rgba(255,107,53,0.1);
+  border: 1px solid rgba(255,107,53,0.3);
+  color: var(--accent);
+  padding: 0.4rem 1.2rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.8s ease both;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  color: var(--text-bright);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+  animation: fadeUp 0.8s 0.15s ease both;
+}
+
+.hero h1 .highlight {
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero .subtitle {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 1rem auto 2.5rem;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+
+.hero .analogy-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  max-width: 560px;
+  text-align: left;
+  animation: fadeUp 0.8s 0.45s ease both;
+  position: relative;
+}
+
+.hero .analogy-card::before {
+  content: '💡';
+  position: absolute;
+  top: -16px;
+  left: 24px;
+  font-size: 1.5rem;
+  background: var(--bg-card);
+  padding: 0 8px;
+}
+
+.hero .analogy-card p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+.hero .analogy-card strong {
+  color: var(--accent);
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  animation: bounce 2s infinite, fadeUp 0.8s 0.6s ease both;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.scroll-hint span {
+  display: block;
+  font-size: 1.5rem;
+  margin-top: 0.3rem;
+}
+
+/* === MAIN CONTENT === */
+.content-wrapper {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 1.5rem 6rem;
+}
+
+/* === SECTION === */
+.section {
+  margin-bottom: 4rem;
+  animation: fadeUp 0.6s ease both;
+}
+
+.section-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.section h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 0.5rem;
+}
+
+.section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin: 2rem 0 0.8rem;
+}
+
+.section-desc {
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* === ANALOGY BOX === */
+.analogy {
+  background: linear-gradient(135deg, rgba(255,107,53,0.06), rgba(124,92,252,0.04));
+  border: 1px solid rgba(255,107,53,0.15);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  padding: 1.5rem 1.8rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.analogy::before {
+  content: '🎯 生活类比';
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.analogy p { color: var(--text); font-size: 0.95rem; }
+
+/* === CONCEPT CARD === */
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.concept-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.concept-card:hover {
+  border-color: rgba(255,107,53,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+.concept-card .icon {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+}
+
+.concept-card h4 {
+  color: var(--text-bright);
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.concept-card p {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* === FLOW DIAGRAM === */
+.flow-diagram {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+
+.flow-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: fit-content;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  min-width: 110px;
+}
+
+.flow-step .step-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.flow-step:hover .step-icon { transform: scale(1.15); }
+
+.flow-step .step-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+}
+
+.flow-step.user .step-icon { background: rgba(33,150,243,0.15); }
+.flow-step.llm .step-icon { background: rgba(124,92,252,0.15); }
+.flow-step.tool .step-icon { background: rgba(255,107,53,0.15); }
+.flow-step.result .step-icon { background: rgba(0,212,170,0.15); }
+
+.flow-arrow {
+  font-size: 1.3rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin: 0 -4px;
+}
+
+.flow-loop {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  border: 1px dashed rgba(255,107,53,0.3);
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+/* === CODE BLOCK === */
+.code-block-wrapper {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.code-block-header {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-block-header .dots {
+  display: flex;
+  gap: 6px;
+}
+
+.code-block-header .dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+
+.code-block-header .dots span:nth-child(1) { background: #ff5f57; }
+.code-block-header .dots span:nth-child(2) { background: #ffbd2e; }
+.code-block-header .dots span:nth-child(3) { background: #28c840; }
+
+.code-block-header .filename {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.code-block {
+  background: var(--bg-code);
+  padding: 1.2rem 1.5rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #c9d1d9;
+  tab-size: 4;
+}
+
+.code-block .comment { color: #6a737d; font-style: italic; }
+.code-block .keyword { color: #ff7b72; }
+.code-block .string { color: #a5d6ff; }
+.code-block .func { color: #d2a8ff; }
+.code-block .decorator { color: #ffa657; }
+.code-block .self { color: #ff7b72; }
+.code-block .number { color: #79c0ff; }
+.code-block .builtin { color: #ffa657; }
+
+/* === ANNOTATED CODE === */
+.annotated-code {
+  margin: 1.5rem 0;
+}
+
+.code-line {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  transition: background 0.2s;
+}
+
+.code-line:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.code-line .line-num {
+  width: 3rem;
+  flex-shrink: 0;
+  text-align: right;
+  padding: 0.5rem 0.8rem 0.5rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #444;
+  user-select: none;
+  border-right: 1px solid rgba(255,255,255,0.04);
+}
+
+.code-line .line-code {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.code-line .line-annotation {
+  width: 100%;
+  padding: 0.4rem 1rem 0.4rem 4rem;
+  font-size: 0.85rem;
+  color: var(--accent2);
+  background: rgba(0,212,170,0.04);
+  border-left: 3px solid var(--accent2);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.code-line.highlight-line {
+  background: rgba(255,107,53,0.06);
+  border-left: 3px solid var(--accent);
+}
+
+/* === QUIZ === */
+.quiz-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.quiz-container h3 {
+  color: var(--text-bright);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quiz-question {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.quiz-question:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.quiz-question .q-text {
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: var(--text-bright);
+  font-size: 1rem;
+}
+
+.quiz-question .q-text .q-num {
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  margin-right: 0.5rem;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 0.9rem;
+  text-align: left;
+  width: 100%;
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.02);
+}
+
+.quiz-option .opt-letter {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+
+.quiz-option:disabled { cursor: default; }
+
+.quiz-option.correct {
+  border-color: var(--correct);
+  background: rgba(0,212,170,0.06);
+}
+
+.quiz-option.correct .opt-letter {
+  background: var(--correct);
+  color: var(--bg-deep);
+}
+
+.quiz-option.wrong {
+  border-color: var(--wrong);
+  background: rgba(255,71,87,0.06);
+}
+
+.quiz-option.wrong .opt-letter {
+  background: var(--wrong);
+  color: white;
+}
+
+.quiz-feedback {
+  margin-top: 0.8rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  display: none;
+  line-height: 1.6;
+}
+
+.quiz-feedback.show { display: block; }
+
+.quiz-feedback.correct-fb {
+  background: rgba(0,212,170,0.08);
+  border: 1px solid rgba(0,212,170,0.2);
+  color: var(--correct);
+}
+
+.quiz-feedback.wrong-fb {
+  background: rgba(255,71,87,0.08);
+  border: 1px solid rgba(255,71,87,0.2);
+  color: var(--wrong);
+}
+
+.quiz-score {
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(124,92,252,0.1), rgba(255,107,53,0.1));
+  border: 1px solid rgba(124,92,252,0.2);
+  border-radius: 12px;
+  text-align: center;
+  display: none;
+}
+
+.quiz-score.show { display: block; }
+
+.quiz-score .score-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.quiz-score .score-label {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+/* === DEEP DIVE === */
+.deep-dive {
+  background: linear-gradient(135deg, rgba(124,92,252,0.06), rgba(0,212,170,0.04));
+  border: 1px solid rgba(124,92,252,0.15);
+  border-radius: 16px;
+  margin: 2rem 0;
+  overflow: hidden;
+}
+
+.deep-dive-header {
+  padding: 1.2rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.deep-dive-header:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.deep-dive-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--accent3);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.deep-dive-header .toggle-icon {
+  color: var(--text-dim);
+  transition: transform 0.3s;
+  font-size: 1.2rem;
+}
+
+.deep-dive.open .toggle-icon { transform: rotate(180deg); }
+
+.deep-dive-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+
+.deep-dive.open .deep-dive-body {
+  max-height: 2000px;
+}
+
+.deep-dive-body-inner {
+  padding: 0 1.5rem 1.5rem;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.8;
+}
+
+.deep-dive-body-inner p { margin-bottom: 0.8rem; }
+
+/* === TABLE === */
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.styled-table th {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-bright);
+  font-weight: 600;
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+}
+
+.styled-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.styled-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.styled-table code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  background: rgba(255,107,53,0.1);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* === PROGRESS BAR === */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent3));
+  z-index: 1000;
+  transition: width 0.1s;
+}
+
+/* === TOC === */
+.toc {
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.toc-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(255,107,53,0.4);
+}
+
+.toc-dot::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.toc-dot:hover::after { opacity: 1; }
+
+/* === NAVIGATION === */
+.module-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.module-nav a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.module-nav a:hover {
+  color: var(--accent);
+  border-color: rgba(255,107,53,0.3);
+}
+
+.module-nav a.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .toc { display: none; }
+  .flow-steps { justify-content: flex-start; }
+  .content-wrapper { padding: 0 1rem 4rem; }
+  .hero h1 { font-size: 2.5rem; }
+}
+
+/* === SUMMARY CARD === */
+.summary-card {
+  background: linear-gradient(135deg, var(--bg-card), rgba(124,92,252,0.05));
+  border: 1px solid rgba(124,92,252,0.2);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.summary-card h3 {
+  color: var(--accent3);
+  margin-bottom: 1rem;
+}
+
+.summary-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.summary-card li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.summary-card li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  color: var(--accent3);
+  font-size: 0.7rem;
+  top: 0.7rem;
+}
+
+/* === TIP BOX === */
+.tip-box {
+  background: rgba(0,212,170,0.05);
+  border: 1px solid rgba(0,212,170,0.15);
+  border-left: 4px solid var(--accent2);
+  border-radius: 0 12px 12px 0;
+  padding: 1.2rem 1.5rem;
+  margin: 1.5rem 0;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.tip-box::before {
+  content: '💡 小贴士';
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 0.4rem;
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="toc" id="toc">
+  <div class="toc-dot active" data-label="开篇" data-target="hero"></div>
+  <div class="toc-dot" data-label="循环是什么" data-target="sec-loop"></div>
+  <div class="toc-dot" data-label="消息流" data-target="sec-messages"></div>
+  <div class="toc-dot" data-label="代码逐行" data-target="sec-code"></div>
+  <div class="toc-dot" data-label="关键函数" data-target="sec-functions"></div>
+  <div class="toc-dot" data-label="设计模式" data-target="sec-patterns"></div>
+  <div class="toc-dot" data-label="实战练习" data-target="sec-quiz"></div>
+  <div class="toc-dot" data-label="深入探索" data-target="sec-deep"></div>
+  <div class="toc-dot" data-label="总结" data-target="sec-summary"></div>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <div class="hero-badge">MODULE 01 · AGENTFORGE 系列</div>
+  <h1>Agent <span class="highlight">Loop</span></h1>
+  <p class="subtitle">理解 Agent 的心脏 — 一个 while True 循环如何让 AI "活"起来</p>
+  <div class="analogy-card">
+    <p>想象你是一个<strong>餐厅服务员</strong>：客人点菜 → 你告诉厨师 → 厨师做好端上来 → 你送给客人 → 客人可能再点一道 → 循环继续…直到客人说"买单"。<br><br>Agent Loop 就是这个<strong>永不疲倦的服务员</strong>，而 LLM 就是那个厨师。</p>
+  </div>
+  <div class="scroll-hint">向下滚动开始学习<span>↓</span></div>
+</section>
+
+<!-- ==================== 1. 循环本质 ==================== -->
+<div class="content-wrapper">
+
+<section class="section reveal" id="sec-loop">
+  <div class="section-number">01 · 核心概念</div>
+  <h2>🔄 什么是 Agent Loop？</h2>
+  <p class="section-desc">一句话：Agent Loop 就是一个 <code style="color:var(--accent)">while True</code> 死循环，它让 AI 不停地"思考→行动→观察"，直到任务完成。</p>
+
+  <div class="analogy">
+    <p><strong>类比：你在解一道数学题</strong><br>
+    你不会一步算出答案。你的过程是：<br>
+    ① 读题（输入）→ ② 想下一步怎么做（推理）→ ③ 动笔计算（执行）→ ④ 看看结果对不对（观察）→ ⑤ 如果没做完，回到②继续。<br><br>
+    Agent Loop 做的是<strong>完全一样的事情</strong>，只不过"你"变成了 AI，"动笔计算"变成了"调用工具"。</p>
+  </div>
+
+  <div class="flow-diagram">
+    <div class="flow-steps">
+      <div class="flow-step user">
+        <div class="step-icon">👤</div>
+        <div class="step-label">用户输入</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step llm">
+        <div class="step-icon">🧠</div>
+        <div class="step-label">LLM 推理</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step tool">
+        <div class="step-icon">🔧</div>
+        <div class="step-label">工具执行</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step result">
+        <div class="step-icon">📋</div>
+        <div class="step-label">结果返回</div>
+      </div>
+      <div class="flow-loop">🔁 循环继续</div>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>关键理解：</strong>AI 自己不能上网、不能读文件、不能执行命令。它只能"想"。所以它需要<strong>工具</strong>来帮它做事，而 Agent Loop 负责把工具的结果"喂"回给 AI，让它继续思考。
+  </div>
+</section>
+
+<!-- ==================== 2. 两个信号 ==================== -->
+<section class="section reveal" id="sec-messages">
+  <div class="section-number">02 · 循环的两个信号</div>
+  <h2>🚦 循环什么时候停？</h2>
+  <p class="section-desc">循环不能永远转下去。它靠一个叫 <code style="color:var(--accent)">stop_reason</code> 的信号来决定"继续"还是"结束"。</p>
+
+  <div class="analogy">
+    <p><strong>类比：交通信号灯</strong><br>
+    <strong style="color:var(--accent)">🔴 红灯（stop_reason ≠ tool_use）</strong>= "我做完了"→ 循环停止，返回结果<br>
+    <strong style="color:var(--accent2)">🟢 绿灯（stop_reason = tool_use）</strong>= "我还需要用工具"→ 执行工具，继续循环</p>
+  </div>
+
+  <table class="styled-table">
+    <thead>
+      <tr><th>stop_reason 的值</th><th>含义</th><th>循环动作</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>tool_use</code></td>
+        <td>AI 说："我要用一下工具"</td>
+        <td style="color:var(--accent2)">执行工具 → 结果喂回去 → 继续循环 🔄</td>
+      </tr>
+      <tr>
+        <td><code>end_turn</code></td>
+        <td>AI 说："我说完了"</td>
+        <td style="color:var(--accent)">退出循环，返回最终答案 ✅</td>
+      </tr>
+      <tr>
+        <td><code>max_tokens</code></td>
+        <td>AI 说太多话了，被强制打断</td>
+        <td style="color:var(--wrong)">⚠️ 异常情况，需要处理</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>📨 消息是怎么流动的？</h3>
+  <p>在循环过程中，所有对话内容都存在一个列表 <code style="color:var(--accent)">messages[]</code> 里，像聊天记录一样不断追加：</p>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <div class="icon">👤</div>
+      <h4>user 消息</h4>
+      <p>用户说的话，或者工具返回的结果（没错，工具结果也用 user 角色发送）</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">🤖</div>
+      <h4>assistant 消息</h4>
+      <p>AI 的回复，可能是文字回答，也可能是"我要调用某个工具"</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">⚙️</div>
+      <h4>system 消息</h4>
+      <p>系统提示词，告诉 AI "你是谁"以及"你能做什么"，在最开头设置一次</p>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>为什么要保存所有消息？</strong>因为 AI 没有记忆！每次调用它，都要把<strong>完整的聊天记录</strong>一起发过去，它才能"记住"之前发生了什么。这就像你每天都要给同事重新描述一遍今天发生了什么。
+  </div>
+</section>
+
+<!-- ==================== 3. 代码逐行 ==================== -->
+<section class="section reveal" id="sec-code">
+  <div class="section-number">03 · 代码详解</div>
+  <h2>📝 逐行读懂核心代码</h2>
+  <p class="section-desc">下面这段代码就是 Agent 的"心脏"。我们一行一行拆解，保证你看得懂。</p>
+
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="filename">agent/core/loop.py</span>
+    </div>
+  </div>
+
+  <div class="annotated-code" id="annotatedCode">
+    <!-- 注释行 -->
+    <div class="code-line">
+      <span class="line-num">1</span>
+      <span class="line-code"><span class="keyword">def</span> <span class="func">_agent_loop</span>(<span class="self">self</span>, verbose: <span class="builtin">bool</span> = <span class="keyword">False</span>) -> <span class="builtin">str</span>:</span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">2</span>
+      <span class="line-code">    <span class="string">"""Agent 核心循环"""</span></span>
+    </div>
+    <div class="code-line"><div class="line-annotation">📌 定义一个函数 <strong>_agent_loop</strong>。前面加下划线 _ 表示这是"内部方法"，外面不应该直接调用它。</div></div>
+
+    <!-- while True -->
+    <div class="code-line highlight-line">
+      <span class="line-num">3</span>
+      <span class="line-code">    <span class="keyword">while</span> <span class="keyword">True</span>:</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🔁 <strong>死循环开始！</strong>就像一个永不停歇的转盘。只有满足退出条件（return）才会停下来。</div></div>
+
+    <!-- 检查轮次 -->
+    <div class="code-line">
+      <span class="line-num">4</span>
+      <span class="line-code">        <span class="keyword">if</span> <span class="self">self</span>.state.<span class="func">has_exceeded_max_turns</span>():</span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">5</span>
+      <span class="line-code">            <span class="keyword">return</span> <span class="string">f"Error: Exceeded maximum turns"</span></span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🛡️ <strong>安全阀！</strong>如果循环次数超过上限（默认100次），强制停止。防止 AI 陷入无限循环——就像给跑步机设了最长时间。</div></div>
+
+    <!-- 轮次+1 -->
+    <div class="code-line">
+      <span class="line-num">6</span>
+      <span class="line-code">        <span class="self">self</span>.state.<span class="func">increment_turn</span>()</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">📊 轮次计数器 +1。每转一圈就记录一次，方便监控和调试。</div></div>
+
+    <!-- 调用 LLM -->
+    <div class="code-line highlight-line">
+      <span class="line-num">7</span>
+      <span class="line-code">        response = <span class="self">self</span>.<span class="func">_call_llm</span>()</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🧠 <strong>核心操作：调用 LLM！</strong>把所有聊天记录发给 AI 大模型，等它"思考"并给出回答。这一步可能需要几秒到几十秒。</div></div>
+
+    <!-- 保存回复 -->
+    <div class="code-line">
+      <span class="line-num">8</span>
+      <span class="line-code">        <span class="self">self</span>.history.<span class="func">add_assistant</span>(response.content)</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">💾 把 AI 的回复保存到聊天记录里。这样下次调用时，AI 能"记住"自己说了什么。</div></div>
+
+    <!-- 检查是否有工具调用 -->
+    <div class="code-line highlight-line">
+      <span class="line-num">9</span>
+      <span class="line-code">        <span class="keyword">if not</span> <span class="self">self</span>.<span class="func">_has_tool_use</span>(response):</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🚦 <strong>关键判断点！</strong>检查 AI 的回复里有没有说"我要用某个工具"。如果没有 → 说明 AI 觉得任务做完了。</div></div>
+
+    <!-- 没有工具调用 → 返回 -->
+    <div class="code-line">
+      <span class="line-num">10</span>
+      <span class="line-code">            final_text = <span class="self">self</span>.<span class="func">_extract_text</span>(response)</span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">11</span>
+      <span class="line-code">            hook_result = <span class="self">self</span>.<span class="func">_trigger_hooks</span>(<span class="string">"Stop"</span>, ...)</span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">12</span>
+      <span class="line-code">            <span class="keyword">if</span> hook_result:</span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">13</span>
+      <span class="line-code">                <span class="keyword">continue</span>  <span class="comment"># Hook 说"还要继续"</span></span>
+    </div>
+    <div class="code-line">
+      <span class="line-num">14</span>
+      <span class="line-code">            <span class="keyword">return</span> final_text  <span class="comment"># 🎉 正常退出！</span></span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🏁 <strong>循环出口！</strong>提取 AI 的文字回答，触发停止钩子（Hook），然后 <code>return</code> 跳出 while True 循环。如果没有 Hook 阻止，任务就完成了！</div></div>
+
+    <!-- 有工具调用 → 执行 -->
+    <div class="code-line highlight-line">
+      <span class="line-num">15</span>
+      <span class="line-code">        tool_results = <span class="self">self</span>.<span class="func">_execute_tools</span>(response, verbose)</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">🔧 <strong>执行工具！</strong>AI 说"我要读个文件"或"我要跑个命令"，这里就真的去执行，拿到结果。</div></div>
+
+    <div class="code-line">
+      <span class="line-num">16</span>
+      <span class="line-code">        <span class="self">self</span>.history.<span class="func">add_tool_results</span>(tool_results)</span>
+    </div>
+    <div class="code-line"><div class="line-annotation">📋 把工具执行结果存进聊天记录，下一轮循环时 AI 会看到这些结果，然后继续思考。→ 回到第3行，<strong>循环继续！</strong></div></div>
+  </div>
+</section>
+
+<!-- ==================== 4. 关键函数 ==================== -->
+<section class="section reveal" id="sec-functions">
+  <div class="section-number">04 · 关键函数</div>
+  <h2>⚙️ 三个关键函数拆解</h2>
+  <p class="section-desc">核心循环虽然只有十几行，但它调用了三个"打工人"函数来完成具体工作。</p>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <div class="icon">📡</div>
+      <h4>_call_llm()</h4>
+      <p><strong>信使</strong>：把聊天记录和工具定义打包发给 AI 大模型，等它回复。就像把信寄出去，等回信。</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">🔍</div>
+      <h4>_has_tool_use()</h4>
+      <p><strong>检查员</strong>：翻看 AI 的回复，找有没有"tool_use"标记。有的话说明 AI 想用工具。</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">🔨</div>
+      <h4>_execute_tools()</h4>
+      <p><strong>执行者</strong>：拿到 AI 指定的工具名称和参数，真的去执行，然后把结果收集起来。</p>
+    </div>
+  </div>
+
+  <h3>📡 _call_llm() — 给 AI 发消息</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="filename">_call_llm()</span>
+    </div>
+    <div class="code-block">
+<span class="keyword">def</span> <span class="func">_call_llm</span>(<span class="self">self</span>):
+    <span class="comment"># 获取完整的聊天记录</span>
+    messages = <span class="self">self</span>.history.<span class="func">get_messages</span>()
+    
+    <span class="comment"># 调用 Anthropic API（就是 Claude 的接口）</span>
+    <span class="keyword">return</span> <span class="self">self</span>.client.messages.<span class="func">create</span>(
+        model=<span class="self">self</span>.model,           <span class="comment"># 用哪个模型（如 claude-3）</span>
+        system=<span class="self">self</span>.system_prompt,   <span class="comment"># 系统提示词（AI 的人设）</span>
+        messages=messages,            <span class="comment"># 聊天记录</span>
+        tools=<span class="self">self</span>.tools,           <span class="comment"># 可用工具列表</span>
+        max_tokens=<span class="self">self</span>.max_tokens, <span class="comment"># 最多生成多少字</span>
+    )</div>
+  </div>
+
+  <div class="analogy">
+    <p><strong>类比：点外卖</strong><br>
+    <code>model</code> = 选哪家餐厅（模型）<br>
+    <code>system</code> = 备注"不要辣"（AI 的人设约束）<br>
+    <code>messages</code> = 你之前跟店家的所有聊天记录<br>
+    <code>tools</code> = 店家能做的菜品列表（AI 可用的工具）<br>
+    <code>max_tokens</code> = 最多做几道菜（限制回复长度）</p>
+  </div>
+
+  <h3>🔨 _execute_tools() — 执行工具</h3>
+  <div class="code-block-wrapper">
+    <div class="code-block-header">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="filename">_execute_tools()</span>
+    </div>
+    <div class="code-block">
+<span class="keyword">def</span> <span class="func">_execute_tools</span>(<span class="self">self</span>, response, verbose=<span class="keyword">False</span>):
+    results = []
+    
+    <span class="keyword">for</span> block <span class="keyword">in</span> response.content:
+        <span class="keyword">if</span> block.type != <span class="string">"tool_use"</span>:
+            <span class="keyword">continue</span>  <span class="comment"># 跳过文字部分，只处理工具调用</span>
+        
+        <span class="comment"># 执行前的钩子（可以阻止某些工具执行）</span>
+        hook_result = <span class="self">self</span>.<span class="func">_trigger_hooks</span>(<span class="string">"PreToolUse"</span>, block)
+        <span class="keyword">if</span> hook_result:
+            <span class="keyword">continue</span>  <span class="comment"># 钩子阻止了执行</span>
+        
+        <span class="comment"># 找到对应的工具处理器，执行它</span>
+        handler = <span class="self">self</span>.tool_handlers.<span class="func">get</span>(block.name)
+        output = <span class="func">handler</span>(**block.input)  <span class="comment"># 真正执行！</span>
+        
+        <span class="comment"># 执行后的钩子</span>
+        <span class="self">self</span>.<span class="func">_trigger_hooks</span>(<span class="string">"PostToolUse"</span>, block, output)
+        
+        results.<span class="func">append</span>({...})  <span class="comment"># 收集结果</span>
+    
+    <span class="keyword">return</span> results</div>
+  </div>
+
+  <div class="tip-box">
+    <strong>Hook 是什么？</strong>Hook 就像"中间人"或"安检员"。在工具执行<strong>之前</strong>（PreToolUse）和<strong>之后</strong>（PostToolUse），都可以插入自定义逻辑。比如：禁止 AI 执行 <code>rm -rf /</code> 这种危险命令。
+  </div>
+</section>
+
+<!-- ==================== 5. 设计模式 ==================== -->
+<section class="section reveal" id="sec-patterns">
+  <div class="section-number">05 · 设计模式</div>
+  <h2>🎨 代码里用了哪些设计模式？</h2>
+  <p class="section-desc">设计模式就是"前辈们总结的编程套路"。Agent Loop 用了三种经典模式。</p>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <div class="icon">🔄</div>
+      <h4>状态模式</h4>
+      <p>Agent 有不同的状态（空闲→运行→等待→完成），每个状态有不同的行为。就像红绿灯，不同颜色对应不同动作。</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">📢</div>
+      <h4>观察者模式</h4>
+      <p>Hook 系统就是观察者。当 Agent 发生事件（工具执行前/后），所有注册的 Hook 都会被通知。就像微信群发消息，所有人都能看到。</p>
+    </div>
+    <div class="concept-card">
+      <div class="icon">🧩</div>
+      <h4>策略模式</h4>
+      <p>不同的工具（读文件、执行命令、搜索）都是"策略"，Agent 根据 AI 的选择调用对应的策略。就像餐厅菜单，点什么做什么。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 6. 实战测验 ==================== -->
+<section class="section reveal" id="sec-quiz">
+  <div class="section-number">06 · 实战测验</div>
+  <h2>🧪 来检验一下你的理解！</h2>
+  <p class="section-desc">做完这些题，你就知道自己是不是真的理解了 Agent Loop。</p>
+
+  <div class="quiz-container">
+    <h3>📝 选择题</h3>
+
+    <!-- Q1 -->
+    <div class="quiz-question" data-correct="B">
+      <div class="q-text"><span class="q-num">Q1</span>当 LLM 返回的 stop_reason 是 "tool_use" 时，Agent Loop 应该怎么做？</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-opt="A"><span class="opt-letter">A</span>退出循环，返回结果给用户</button>
+        <button class="quiz-option" data-opt="B"><span class="opt-letter">B</span>执行工具 → 把结果加入消息历史 → 继续循环</button>
+        <button class="quiz-option" data-opt="C"><span class="opt-letter">C</span>直接忽略，再次调用 LLM</button>
+        <button class="quiz-option" data-opt="D"><span class="opt-letter">D</span>报错退出</button>
+      </div>
+      <div class="quiz-feedback" id="q1fb"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-question" data-correct="C">
+      <div class="q-text"><span class="q-num">Q2</span>为什么每次调用 LLM 都要发送完整的聊天记录？</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-opt="A"><span class="opt-letter">A</span>因为 API 要求必须发送</button>
+        <button class="quiz-option" data-opt="B"><span class="opt-letter">B</span>为了浪费 token</button>
+        <button class="quiz-option" data-opt="C"><span class="opt-letter">C</span>因为 LLM 没有持久记忆，需要完整上下文才能理解之前发生了什么</button>
+        <button class="quiz-option" data-opt="D"><span class="opt-letter">D</span>因为聊天记录很短，发不发都一样</button>
+      </div>
+      <div class="quiz-feedback" id="q2fb"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-question" data-correct="B">
+      <div class="q-text"><span class="q-num">Q3</span>max_turns 的作用是什么？</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-opt="A"><span class="opt-letter">A</span>限制 LLM 的回复长度</button>
+        <button class="quiz-option" data-opt="B"><span class="opt-letter">B</span>防止 Agent 陷入无限循环</button>
+        <button class="quiz-option" data-opt="C"><span class="opt-letter">C</span>限制可以调用的工具数量</button>
+        <button class="quiz-option" data-opt="D"><span class="opt-letter">D</span>控制并发请求数</button>
+      </div>
+      <div class="quiz-feedback" id="q3fb"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-question" data-correct="A">
+      <div class="q-text"><span class="q-num">Q4</span>在 _execute_tools() 函数中，"PreToolUse" Hook 的作用是？</div>
+      <div class="quiz-options">
+        <button class="quiz-option" data-opt="A"><span class="opt-letter">A</span>在工具执行前进行检查，可以阻止危险操作</button>
+        <button class="quiz-option" data-opt="B"><span class="opt-letter">B</span>在工具执行后记录日志</button>
+        <button class="quiz-option" data-opt="C"><span class="opt-letter">C</span>替换工具的执行结果</button>
+        <button class="quiz-option" data-opt="D"><span class="opt-letter">D</span>加速工具的执行</button>
+      </div>
+      <div class="quiz-feedback" id="q4fb"></div>
+    </div>
+
+    <!-- Q5 - 填空/思考 -->
+    <div class="quiz-question" data-correct="while">
+      <div class="q-text"><span class="q-num">Q5</span>（填空）Agent Loop 的核心是一个 <input type="text" id="q5input" style="background:var(--bg-code);border:1px solid var(--border);color:var(--text);padding:0.3rem 0.6rem;border-radius:6px;font-family:'JetBrains Mono',monospace;width:140px;font-size:0.9rem" placeholder="填入关键词"> <code>True</code> 循环。</div>
+      <button class="quiz-option" style="width:auto;padding:0.5rem 1.5rem;margin-top:0.5rem" onclick="checkQ5()"><span class="opt-letter">✓</span>提交答案</button>
+      <div class="quiz-feedback" id="q5fb"></div>
+    </div>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="score-num" id="scoreNum">0/5</div>
+      <div class="score-label">答对题数</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. 深入探索 ==================== -->
+<section class="section reveal" id="sec-deep">
+  <div class="section-number">07 · 深入探索</div>
+  <h2>🔬 想了解更多？</h2>
+  <p class="section-desc">这些内容超出基础范围，但如果你想深入理解 Agent，值得看看。</p>
+
+  <div class="deep-dive" onclick="toggleDeep(this)">
+    <div class="deep-dive-header">
+      <h3>🧪 Stop Hook 的高级用法</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <div class="deep-dive-body-inner">
+        <p>在代码第 11-13 行，我们看到当 LLM 表示"我说完了"时，还会触发一个 <strong>Stop Hook</strong>。这个 Hook 可以返回新的用户消息，让循环继续！</p>
+        <p><strong>实际应用场景：</strong></p>
+        <p>• <strong>自动审查</strong>：AI 说"我做完了"，但 Hook 检查结果发现有遗漏，自动追加"请再检查一遍"</p>
+        <p>• <strong>多轮确认</strong>：AI 完成任务后，Hook 自动添加"请确认你的修改"，实现人机协作</p>
+        <p>• <strong>自我纠错</strong>：Hook 检查 AI 的输出是否符合格式要求，不符合就要求重做</p>
+        <p>这种设计让 Agent 不仅能"做事"，还能"自我反思和改进"——这正是高级 Agent 的核心能力。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="deep-dive" onclick="toggleDeep(this)">
+    <div class="deep-dive-header">
+      <h3>⚡ 并行工具执行 vs 串行执行</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <div class="deep-dive-body-inner">
+        <p>在 _execute_tools() 中，工具是<strong>逐个串行执行</strong>的（for 循环）。但如果 AI 一次请求了多个工具呢？</p>
+        <p>比如 AI 说："同时读取 file1.py 和 file2.py"——两个读文件操作完全独立，串行执行就浪费时间了。</p>
+        <p><strong>优化方案：</strong></p>
+        <p>• 使用 <code>asyncio.gather()</code> 并行执行独立的工具调用</p>
+        <p>• 用有向无环图（DAG）分析工具间的依赖关系</p>
+        <p>• 只对有依赖的工具串行，无依赖的并行</p>
+        <p>这就是为什么生产级 Agent 比教学示例快得多的原因之一。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="deep-dive" onclick="toggleDeep(this)">
+    <div class="deep-dive-header">
+      <h3>🌊 Token 窗口与上下文压缩</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <div class="deep-dive-body-inner">
+        <p>随着循环进行，<code>messages[]</code> 会越来越长。但 LLM 的上下文窗口是有限的（比如 Claude 约 200K tokens）。</p>
+        <p><strong>当消息太长时怎么办？</strong></p>
+        <p>• <strong>截断</strong>：丢弃最早的消息（简单但可能丢失重要信息）</p>
+        <p>• <strong>摘要压缩</strong>：让 LLM 把旧消息总结成一段话，替代原始消息</p>
+        <p>• <strong>滑动窗口</strong>：只保留最近 N 轮对话</p>
+        <p>• <strong>重要性排序</strong>：根据消息的重要性选择性保留</p>
+        <p>这就是文档中提到的 [[06-Memory System]] 要解决的问题——Agent 的"记忆管理"。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="deep-dive" onclick="toggleDeep(this)">
+    <div class="deep-dive-header">
+      <h3>🤔 为什么叫 "stop_reason" 而不是 "status"？</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <div class="deep-dive-body-inner">
+        <p>这是 Anthropic API 的设计选择。<code>stop_reason</code> 回答的问题是<strong>"模型为什么停了？"</strong>而不是"模型的状态是什么？"</p>
+        <p>这种设计更精确：状态可以有很多种，但"停止原因"直接告诉你下一步该做什么：</p>
+        <p>• <code>tool_use</code> → "我需要工具" → 你该去执行工具</p>
+        <p>• <code>end_turn</code> → "我说完了" → 你该返回结果</p>
+        <p>• <code>max_tokens</code> → "我被截断了" → 你该处理异常</p>
+        <p>每个值都是一个<strong>明确的行动指令</strong>，而不仅仅是一个状态标签。这是 API 设计的好范例。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. 总结 ==================== -->
+<section class="section reveal" id="sec-summary">
+  <div class="section-number">08 · 总结</div>
+  <h2>📋 本节核心要点</h2>
+
+  <div class="summary-card">
+    <h3>🎯 你学到了什么</h3>
+    <ul>
+      <li><strong>Agent Loop = while True 循环</strong>，是所有 Agent 行为的基础骨架</li>
+      <li><strong>两个关键信号</strong>：<code>tool_use</code>（继续循环）和 <code>end_turn</code>（退出循环）</li>
+      <li><strong>消息历史</strong>是 Agent 的"短期记忆"，每次调用 LLM 都要带上完整记录</li>
+      <li><strong>三个核心函数</strong>：_call_llm（通信）、_has_tool_use（判断）、_execute_tools（执行）</li>
+      <li><strong>Hook 系统</strong>让循环可扩展：执行前可拦截，执行后可审计，停止时可继续</li>
+      <li><strong>安全阀</strong> max_turns 防止无限循环，是生产环境的必要保护</li>
+    </ul>
+  </div>
+
+  <div class="analogy">
+    <p><strong>最终类比：Agent Loop 就像一个永不停歇的厨师学徒</strong><br>
+    它拿到订单（用户输入）→ 做菜（LLM 推理）→ 需要什么食材就去拿（工具执行）→ 做好了端给客人 → 如果客人说"再来一道"就继续做 → 直到客人满意离开。<br><br>
+    <strong>30 行的 while True 就是 Agent 的核心。所有复杂功能都是在这个循环上叠加的。</strong></p>
+  </div>
+
+  <div class="module-nav">
+    <a class="disabled">← 上一节</a>
+    <span style="color:var(--text-dim);font-size:0.85rem">MODULE 1/11</span>
+    <a href="teach-tool-system.html">下一节 →</a>
+  </div>
+</section>
+
+</div><!-- content-wrapper -->
+
+<script>
+// === Progress bar ===
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// === Reveal on scroll ===
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// === TOC ===
+document.querySelectorAll('.toc-dot').forEach(dot => {
+  dot.addEventListener('click', () => {
+    const target = document.getElementById(dot.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Update active TOC on scroll
+const sections = ['hero','sec-loop','sec-messages','sec-code','sec-functions','sec-patterns','sec-quiz','sec-deep','sec-summary'];
+window.addEventListener('scroll', () => {
+  const dots = document.querySelectorAll('.toc-dot');
+  let current = 0;
+  sections.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < window.innerHeight * 0.5) current = i;
+  });
+  dots.forEach((d, i) => d.classList.toggle('active', i === current));
+});
+
+// === Quiz ===
+const explanations = {
+  q1: {
+    correct: '正确！✅ stop_reason = "tool_use" 意味着 AI 想调用工具。Agent 需要：1) 执行工具 2) 把结果存入消息历史 3) 再次调用 LLM 让它继续思考。',
+    wrong: '不对哦。stop_reason = "tool_use" 表示 AI 想用工具，这时候应该执行工具、把结果加入历史、然后继续循环。'
+  },
+  q2: {
+    correct: '正确！✅ LLM 本身是无状态的——它就像一个只有短期记忆的人，每次对话都要把之前的聊天记录给它看，它才知道上下文。',
+    wrong: '不准确。LLM 没有持久记忆（stateless），每次 API 调用都是独立的。如果不发完整记录，AI 就不知道之前聊了什么。'
+  },
+  q3: {
+    correct: '正确！✅ max_turns 就像给循环设了一个"最大圈数"。超过这个数就强制退出，防止 AI 陷入死循环不停调用工具。',
+    wrong: '不对。max_turns 限制的是循环的轮次（圈数），不是回复长度或工具数量。它的核心目的是防止无限循环。'
+  },
+  q4: {
+    correct: '正确！✅ PreToolUse Hook 在工具执行之前触发，可以检查工具名和参数。比如可以阻止执行 "rm -rf /" 这种危险命令。',
+    wrong: '不对。PreToolUse 是在工具执行"之前"触发的，主要用于安全检查和权限控制。'
+  }
+};
+
+let answered = 0;
+let correct = 0;
+
+document.querySelectorAll('.quiz-question:not(:last-of-type)').forEach(q => {
+  const qNum = q.querySelector('.q-num').textContent;
+  const qKey = qNum.replace('Q', 'q');
+  const right = q.dataset.correct;
+  
+  q.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      
+      q.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
+      const isCorrect = btn.dataset.opt === right;
+      
+      if (isCorrect) {
+        btn.classList.add('correct');
+        correct++;
+      } else {
+        btn.classList.add('wrong');
+        q.querySelector(`[data-opt="${right}"]`).classList.add('correct');
+      }
+      
+      const fb = document.getElementById(qKey + 'fb');
+      fb.textContent = isCorrect ? explanations[qKey].correct : explanations[qKey].wrong;
+      fb.className = 'quiz-feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+      
+      answered++;
+      if (answered >= 4) showScore();
+    });
+  });
+});
+
+function checkQ5() {
+  const input = document.getElementById('q5input');
+  const fb = document.getElementById('q5fb');
+  const val = input.value.trim().toLowerCase();
+  
+  if (answered >= 4 && document.getElementById('q5fb').classList.contains('show')) return;
+  
+  if (val === 'while') {
+    fb.textContent = '正确！✅ Agent Loop 的核心就是 while True: 无限循环，只有 return 或 break 才能让它停下来。';
+    fb.className = 'quiz-feedback show correct-fb';
+    correct++;
+  } else {
+    fb.textContent = '不对哦，答案是 "while"。while True 创建一个无限循环，这是 Agent 持续运行的基础。';
+    fb.className = 'quiz-feedback show wrong-fb';
+  }
+  answered++;
+  showScore();
+}
+
+function showScore() {
+  if (answered >= 5) {
+    const el = document.getElementById('quizScore');
+    el.classList.add('show');
+    document.getElementById('scoreNum').textContent = correct + '/5';
+  }
+}
+
+// === Deep Dive Toggle ===
+function toggleDeep(el) {
+  el.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

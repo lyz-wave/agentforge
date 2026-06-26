@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentForge 教学系列 - 从零构建智能体</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg-deep:#0a0a0f;--bg-card:#12121a;--bg-code:#1a1a2e;--accent:#ff6b35;--accent2:#00d4aa;--accent3:#7c5cfc;--text:#e8e8f0;--text-dim:#8888a0;--radius:16px}
+html{scroll-behavior:smooth}
+body{background:var(--bg-deep);color:var(--text);font-family:'Noto Sans SC',sans-serif;line-height:1.7;overflow-x:hidden}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg-deep)}
+::-webkit-scrollbar-thumb{background:var(--accent3);border-radius:4px}
+
+/* ===== HERO ===== */
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,rgba(124,92,252,.12) 0%,transparent 50%),radial-gradient(circle at 70% 60%,rgba(255,107,53,.08) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(0,212,170,.06) 0%,transparent 50%);animation:heroBg 20s ease-in-out infinite alternate}
+@keyframes heroBg{to{transform:rotate(10deg) scale(1.1)}}
+.hero-badge{display:inline-block;padding:.4rem 1.2rem;border:1px solid var(--accent2);border-radius:99px;font-size:.85rem;color:var(--accent2);letter-spacing:.1em;margin-bottom:1.5rem;backdrop-filter:blur(8px);position:relative;animation:fadeUp .8s ease both}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6.5rem);font-weight:900;background:linear-gradient(135deg,var(--accent) 0%,var(--accent3) 50%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;position:relative;animation:fadeUp .8s ease .15s both}
+.hero .subtitle{font-size:clamp(1rem,2.5vw,1.4rem);color:var(--text-dim);max-width:680px;margin:1.2rem auto 0;animation:fadeUp .8s ease .3s both}
+.hero .hero-tags{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;animation:fadeUp .8s ease .45s both}
+.hero .hero-tags span{padding:.35rem .9rem;background:var(--bg-card);border:1px solid #2a2a3a;border-radius:8px;font-size:.8rem;font-family:'JetBrains Mono',monospace;color:var(--accent2)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+.scroll-hint{position:absolute;bottom:2rem;animation:bounce 2s infinite}
+.scroll-hint svg{width:28px;height:28px;stroke:var(--text-dim)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+
+/* ===== SECTIONS ===== */
+section{max-width:1200px;margin:0 auto;padding:5rem 1.5rem}
+.section-title{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:900;margin-bottom:.5rem}
+.section-title .highlight{color:var(--accent)}
+.section-sub{color:var(--text-dim);margin-bottom:2.5rem;font-size:1rem}
+
+/* ===== ARCHITECTURE DIAGRAM ===== */
+.arch-wrap{background:var(--bg-card);border:1px solid #1e1e2e;border-radius:var(--radius);padding:2.5rem 2rem;position:relative;overflow:hidden}
+.arch-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent3),var(--accent2))}
+.arch-grid{display:grid;grid-template-columns:1fr;gap:1.5rem}
+.arch-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center}
+.arch-box{padding:.7rem 1.3rem;border-radius:10px;font-size:.85rem;font-weight:500;text-align:center;min-width:110px;position:relative;cursor:default;transition:transform .25s,box-shadow .25s}
+.arch-box:hover{transform:translateY(-3px)}
+.arch-box.core{background:linear-gradient(135deg,rgba(255,107,53,.2),rgba(255,107,53,.05));border:1px solid rgba(255,107,53,.4);color:var(--accent)}
+.arch-box.ext{background:linear-gradient(135deg,rgba(124,92,252,.2),rgba(124,92,252,.05));border:1px solid rgba(124,92,252,.4);color:var(--accent3)}
+.arch-box.tool{background:linear-gradient(135deg,rgba(0,212,170,.2),rgba(0,212,170,.05));border:1px solid rgba(0,212,170,.4);color:var(--accent2)}
+.arch-box.cli{background:linear-gradient(135deg,rgba(200,200,220,.12),rgba(200,200,220,.04));border:1px solid rgba(200,200,220,.25);color:#c8c8dc}
+.arch-arrow{font-size:1.5rem;color:var(--text-dim);user-select:none}
+.arch-label{text-align:center;font-size:.75rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:.3rem}
+
+/* ===== STATS DASHBOARD ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-bottom:3rem}
+.stat-card{background:var(--bg-card);border:1px solid #1e1e2e;border-radius:var(--radius);padding:2rem 1.5rem;text-align:center;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
+.stat-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card:nth-child(1)::before{background:var(--accent)}
+.stat-card:nth-child(2)::before{background:var(--accent2)}
+.stat-card:nth-child(3)::before{background:var(--accent3)}
+.stat-card:nth-child(4)::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:2.8rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{color:var(--text-dim);font-size:.9rem;margin-top:.3rem}
+
+/* ===== MODULE CARDS ===== */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.module-card{background:var(--bg-card);border:1px solid #1e1e2e;border-radius:var(--radius);padding:2rem 1.8rem;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s;border-left:3px solid transparent;opacity:0;transform:translateY(40px)}
+.module-card.visible{opacity:1;transform:translateY(0);transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1),box-shadow .35s}
+.module-card:hover{transform:translateY(-6px) !important;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.module-card.c-accent{border-left-color:var(--accent)}
+.module-card.c-accent2{border-left-color:var(--accent2)}
+.module-card.c-accent3{border-left-color:var(--accent3)}
+.module-card .card-icon{font-size:2.2rem;margin-bottom:.8rem;display:block}
+.module-card .card-num{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-bottom:.4rem}
+.module-card h3{font-size:1.2rem;font-weight:700;margin-bottom:.15rem}
+.module-card .en-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-dim);margin-bottom:.7rem}
+.module-card .card-desc{font-size:.9rem;color:var(--text-dim);line-height:1.6;margin-bottom:1.2rem}
+.module-card .card-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.4rem;background:linear-gradient(135deg,var(--accent3),#5a3de8);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:500;cursor:pointer;text-decoration:none;transition:all .25s;font-family:'Noto Sans SC',sans-serif}
+.module-card .card-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(124,92,252,.35)}
+.module-card.c-accent .card-btn{background:linear-gradient(135deg,var(--accent),#e04500)}
+.module-card.c-accent .card-btn:hover{box-shadow:0 6px 20px rgba(255,107,53,.35)}
+.module-card.c-accent2 .card-btn{background:linear-gradient(135deg,var(--accent2),#00a884)}
+.module-card.c-accent2 .card-btn:hover{box-shadow:0 6px 20px rgba(0,212,170,.35)}
+.module-card .card-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* ===== PRINCIPLES ===== */
+.principles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem}
+.principle{background:var(--bg-card);border:1px solid #1e1e2e;border-radius:var(--radius);padding:1.8rem 1.4rem;text-align:center;transition:transform .3s}
+.principle:hover{transform:translateY(-4px)}
+.principle .p-icon{font-size:2rem;margin-bottom:.6rem}
+.principle h4{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.principle p{font-size:.82rem;color:var(--text-dim);line-height:1.6}
+
+/* ===== DATA FLOW ===== */
+.flow-wrap{background:var(--bg-card);border:1px solid #1e1e2e;border-radius:var(--radius);padding:2.5rem 2rem;overflow-x:auto}
+.flow-chain{display:flex;align-items:center;gap:.8rem;justify-content:center;flex-wrap:wrap;min-width:fit-content}
+.flow-step{padding:.7rem 1.2rem;border-radius:10px;font-size:.82rem;font-weight:500;text-align:center;white-space:nowrap;animation:flowPulse 3s ease-in-out infinite}
+.flow-step:nth-child(odd){animation-delay:calc(var(--i,0) * .3s)}
+@keyframes flowPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,252,.2)}50%{box-shadow:0 0 12px 4px rgba(124,92,252,.15)}}
+.flow-step.u{background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);color:var(--accent2)}
+.flow-step.c{background:rgba(255,107,53,.12);border:1px solid rgba(255,107,53,.3);color:var(--accent)}
+.flow-step.m{background:rgba(124,92,252,.12);border:1px solid rgba(124,92,252,.3);color:var(--accent3)}
+.flow-arrow{font-size:1.3rem;color:var(--text-dim)}
+
+/* ===== QUOTE ===== */
+.quote-section{text-align:center;padding:5rem 1.5rem 3rem}
+.quote-section blockquote{font-size:clamp(1.1rem,3vw,1.6rem);font-style:italic;color:var(--text-dim);max-width:700px;margin:0 auto;line-height:1.8;position:relative;padding:0 2rem}
+.quote-section blockquote::before{content:'"';font-size:4rem;position:absolute;top:-1rem;left:-.5rem;color:var(--accent3);opacity:.4;font-family:serif}
+.quote-section .quote-author{margin-top:1rem;font-size:.9rem;color:var(--accent)}
+
+/* ===== FOOTER ===== */
+footer{text-align:center;padding:2rem 1.5rem;border-top:1px solid #1e1e2e;color:var(--text-dim);font-size:.8rem}
+footer a{color:var(--accent2);text-decoration:none}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:640px){
+  section{padding:3rem 1rem}
+  .arch-row{flex-direction:column}
+  .flow-chain{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .cards-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <span class="hero-badge">🚀 开源教学系列 · 从零构建智能体</span>
+  <h1>AgentForge</h1>
+  <p class="subtitle">一个生产级的 AI Agent 框架，32 个 Python 文件、4600+ 行代码——我们将逐模块拆解，带你看清 Agent 系统的每一层架构。</p>
+  <div class="hero-tags">
+    <span>Python 3.11+</span>
+    <span>8 核心模块</span>
+    <span>5 内置工具</span>
+    <span>4 Hook 事件</span>
+    <span>3 权限门控</span>
+  </div>
+  <div class="scroll-hint">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</header>
+
+<!-- ===== STATS ===== -->
+<section>
+  <h2 class="section-title">📊 项目<span class="highlight">数据一览</span></h2>
+  <p class="section-sub">AgentForge 的工程规模与核心指标</p>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" data-target="32">0</div><div class="stat-label">Python 文件</div></div>
+    <div class="stat-card"><div class="stat-num" data-target="4600">0</div><div class="stat-label">代码行数+</div></div>
+    <div class="stat-card"><div class="stat-num" data-target="8">0</div><div class="stat-label">核心模块</div></div>
+    <div class="stat-card"><div class="stat-num" data-target="5">0</div><div class="stat-label">内置工具</div></div>
+  </div>
+</section>
+
+<!-- ===== ARCHITECTURE ===== -->
+<section>
+  <h2 class="section-title">🏗️ 整体<span class="highlight">架构</span></h2>
+  <p class="section-sub">模块之间的依赖与数据流向，一图看全貌</p>
+  <div class="arch-wrap">
+    <div class="arch-grid">
+      <div class="arch-label">入口层</div>
+      <div class="arch-row">
+        <div class="arch-box cli">💻 CLI</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box core">🧠 Agent Loop</div>
+      </div>
+      <div class="arch-label">核心引擎</div>
+      <div class="arch-row">
+        <div class="arch-box core">📋 Planning</div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box core">🧠 Memory</div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box core">🔌 Hooks</div>
+      </div>
+      <div class="arch-label">能力层</div>
+      <div class="arch-row">
+        <div class="arch-box tool">🔧 Tools</div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ext">🛡️ Permission</div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ext">🔗 MCP</div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ext">👥 Teams</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DATA FLOW ===== -->
+<section>
+  <h2 class="section-title">🔄 数据<span class="highlight">流转</span></h2>
+  <p class="section-sub">一次用户请求在系统中的完整旅程</p>
+  <div class="flow-wrap">
+    <div class="flow-chain">
+      <div class="flow-step u" style="--i:0">👤 用户输入</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step c" style="--i:1">🧠 Agent Loop</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step m" style="--i:2">📋 Planning 规划</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step m" style="--i:3">🧠 Memory 检索</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step c" style="--i:4">🤖 LLM 推理</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step u" style="--i:5">🛡️ 权限检查</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step c" style="--i:6">🔧 Tool 执行</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step m" style="--i:7">🔌 Hook 触发</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step u" style="--i:8">📤 结果返回</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MODULE CARDS ===== -->
+<section>
+  <h2 class="section-title">📚 模块<span class="highlight">详解</span></h2>
+  <p class="section-sub">点击任意卡片，进入对应的交互式教学页面</p>
+  <div class="cards-grid">
+
+    <a href="teach-agent-loop.html" class="module-card c-accent" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🧠</span>
+      <div class="card-num">Chapter 01</div>
+      <h3>Agent Loop 核心循环</h3>
+      <div class="en-title">Agent Loop</div>
+      <p class="card-desc">智能体的心脏——感知-推理-行动的无限循环，驱动每一步决策。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-tool-system.html" class="module-card c-accent2" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🔧</span>
+      <div class="card-num">Chapter 02</div>
+      <h3>Tool System 工具系统</h3>
+      <div class="en-title">Tool System</div>
+      <p class="card-desc">5 大内置工具与自定义扩展机制，让 Agent 拥有操作世界的能力。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-permission-system.html" class="module-card c-accent3" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🛡️</span>
+      <div class="card-num">Chapter 03</div>
+      <h3>Permission System 权限系统</h3>
+      <div class="en-title">Permission System</div>
+      <p class="card-desc">3 层门控机制，确保 Agent 的每一步操作都在安全边界之内。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-hook-system.html" class="module-card c-accent" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🔌</span>
+      <div class="card-num">Chapter 04</div>
+      <h3>Hook System 扩展点</h3>
+      <div class="en-title">Hook System</div>
+      <p class="card-desc">4 大事件钩子，像插件一样扩展 Agent 的生命周期行为。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-planning-system.html" class="module-card c-accent2" style="text-decoration:none;color:inherit">
+      <span class="card-icon">📋</span>
+      <div class="card-num">Chapter 05</div>
+      <h3>Planning System 任务规划</h3>
+      <div class="en-title">Planning System</div>
+      <p class="card-desc">将复杂任务分解为可执行的子步骤，让 Agent 学会"三思而后行"。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-memory-system.html" class="module-card c-accent3" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🧠</span>
+      <div class="card-num">Chapter 06</div>
+      <h3>Memory System 记忆系统</h3>
+      <div class="en-title">Memory System</div>
+      <p class="card-desc">短期工作记忆与长期持久化存储，让 Agent 拥有跨越对话的记忆力。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-team-collaboration.html" class="module-card c-accent" style="text-decoration:none;color:inherit">
+      <span class="card-icon">👥</span>
+      <div class="card-num">Chapter 07</div>
+      <h3>Team Collaboration 团队协作</h3>
+      <div class="en-title">Team Collaboration</div>
+      <p class="card-desc">多 Agent 协同工作，共享上下文与任务分工，从单兵到团队。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-mcp-integration.html" class="module-card c-accent2" style="text-decoration:none;color:inherit">
+      <span class="card-icon">🔗</span>
+      <div class="card-num">Chapter 08</div>
+      <h3>MCP Integration</h3>
+      <div class="en-title">Model Context Protocol</div>
+      <p class="card-desc">接入 MCP 协议，让 Agent 与外部工具和服务无缝对话。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-cli.html" class="module-card c-accent3" style="text-decoration:none;color:inherit">
+      <span class="card-icon">💻</span>
+      <div class="card-num">Chapter 09</div>
+      <h3>CLI 功能详解</h3>
+      <div class="en-title">Command Line Interface</div>
+      <p class="card-desc">命令行入口的所有功能、参数与交互模式全解析。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+    <a href="teach-summary.html" class="module-card c-accent" style="text-decoration:none;color:inherit">
+      <span class="card-icon">📊</span>
+      <div class="card-num">Chapter 10</div>
+      <h3>项目总结与简历亮点</h3>
+      <div class="en-title">Summary & Resume Highlights</div>
+      <p class="card-desc">全局回顾、核心设计决策复盘，以及如何将项目写进简历。</p>
+      <span class="card-btn">开始学习 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+    </a>
+
+  </div>
+</section>
+
+<!-- ===== PRINCIPLES ===== -->
+<section>
+  <h2 class="section-title">💎 核心设计<span class="highlight">原则</span></h2>
+  <p class="section-sub">贯穿 AgentForge 始终的五大工程哲学</p>
+  <div class="principles-grid">
+    <div class="principle">
+      <div class="p-icon">🎯</div>
+      <h4>单一职责</h4>
+      <p>每个模块只做一件事，做到极致，模块间通过清晰接口通信。</p>
+    </div>
+    <div class="principle">
+      <div class="p-icon">🔌</div>
+      <h4>可扩展性</h4>
+      <p>Hook、Tool、MCP 三层扩展点，新增能力无需修改核心代码。</p>
+    </div>
+    <div class="principle">
+      <div class="p-icon">🛡️</div>
+      <h4>安全优先</h4>
+      <p>权限门控前置，所有敏感操作必须经过显式授权才能执行。</p>
+    </div>
+    <div class="principle">
+      <div class="p-icon">💾</div>
+      <h4>持久化</h4>
+      <p>对话历史、任务状态、记忆数据均可持久存储，断点续行。</p>
+    </div>
+    <div class="principle">
+      <div class="p-icon">🖥️</div>
+      <h4>交互性</h4>
+      <p>CLI 交互、进度反馈、权限确认——人始终在回路中。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== QUOTE ===== -->
+<div class="quote-section">
+  <blockquote>
+    Agency 来自模型。Harness 给 Agency 一个落脚点。
+  </blockquote>
+  <p class="quote-author">— AgentForge 设计哲学</p>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p>AgentForge 教学系列 · 从零构建智能体 · 由 <a href="#">AgentForge</a> 驱动</p>
+</footer>
+
+<script>
+// ===== Intersection Observer for card animations =====
+const cards = document.querySelectorAll('.module-card');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      const card = entry.target;
+      const idx = Array.from(cards).indexOf(card);
+      setTimeout(() => card.classList.add('visible'), idx * 80);
+      observer.unobserve(card);
+    }
+  });
+}, { threshold: 0.1 });
+cards.forEach(c => observer.observe(c));
+
+// ===== Animated counters =====
+const counters = document.querySelectorAll('.stat-num');
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = +el.dataset.target;
+      const duration = 1500;
+      const start = performance.now();
+      const animate = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (progress < 1) requestAnimationFrame(animate);
+      };
+      requestAnimationFrame(animate);
+      counterObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+counters.forEach(c => counterObserver.observe(c));
+
+// ===== Parallax on hero =====
+document.addEventListener('mousemove', (e) => {
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+  const x = (e.clientX / window.innerWidth - 0.5) * 10;
+  const y = (e.clientY / window.innerHeight - 0.5) * 10;
+  hero.style.setProperty('--mx', x + 'px');
+  hero.style.setProperty('--my', y + 'px');
+});
+</script>
+</body>
+</html>
