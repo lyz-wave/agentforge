@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 - 记忆系统 - AgentForge 教学</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-deep:#0a0a0f;--bg-card:#12121a;--bg-code:#1a1a2e;--accent:#ff6b35;--accent2:#00d4aa;--accent3:#7c5cfc;--text:#e0e0e0;--text-dim:#888;--text-bright:#fff}
+body{background:var(--bg-deep);color:var(--text);font-family:'Noto Sans SC',sans-serif;line-height:1.8;overflow-x:hidden}
+
+/* Progress Bar */
+.progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));z-index:1000;width:0%;transition:width .3s}
+
+/* TOC Dots */
+.toc-dots{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:999;display:flex;flex-direction:column;gap:12px}
+.toc-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;transition:.3s;border:2px solid transparent}
+.toc-dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 12px var(--accent)}
+.toc-dot:hover{background:var(--accent2)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 50% 50%,rgba(124,92,252,.08) 0%,transparent 50%);animation:pulse 8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:20px;background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.3);color:var(--accent);font-size:13px;margin-bottom:24px;font-weight:500}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;background:linear-gradient(135deg,var(--text-bright),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.hero-sub{font-size:1.3rem;color:var(--text-dim);max-width:600px;margin-bottom:32px}
+.hero-analogy{max-width:700px;background:var(--bg-card);border-radius:16px;padding:32px;border:1px solid rgba(255,255,255,.06);text-align:left}
+.hero-analogy h3{color:var(--accent2);margin-bottom:12px;font-size:1.1rem}
+.hero-analogy .brain-diagram{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap}
+.brain-box{flex:1;min-width:200px;background:var(--bg-code);border-radius:12px;padding:20px;text-align:center;border:1px solid rgba(255,255,255,.06)}
+.brain-box .icon{font-size:2.5rem;margin-bottom:8px}
+.brain-box h4{color:var(--accent);margin-bottom:6px}
+.brain-box p{font-size:.85rem;color:var(--text-dim)}
+.scroll-hint{margin-top:40px;color:var(--text-dim);font-size:.85rem;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+/* Sections */
+.section{max-width:900px;margin:0 auto;padding:80px 24px;opacity:0;transform:translateY(40px);transition:all .8s cubic-bezier(.16,1,.3,1)}
+.section.visible{opacity:1;transform:translateY(0)}
+.section-num{font-family:'Playfair Display',serif;font-size:4rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:8px}
+.section h2{font-size:1.8rem;font-weight:700;margin-bottom:24px;color:var(--text-bright)}
+.section h3{font-size:1.3rem;font-weight:600;color:var(--accent2);margin:24px 0 12px}
+.section p{margin-bottom:16px;color:var(--text)}
+
+/* Cards */
+.card{background:var(--bg-card);border-radius:16px;padding:28px;border:1px solid rgba(255,255,255,.06);margin-bottom:20px}
+.card-highlight{border-left:3px solid var(--accent)}
+.card-green{border-left:3px solid var(--accent2)}
+.card-purple{border-left:3px solid var(--accent3)}
+
+/* Code */
+.code-block{background:var(--bg-code);border-radius:12px;padding:20px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;overflow-x:auto;border:1px solid rgba(255,255,255,.06);position:relative}
+.code-block .lang-tag{position:absolute;top:8px;right:12px;font-size:11px;color:var(--text-dim);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:4px}
+.code-block .comment{color:#6a9955}
+.code-block .keyword{color:var(--accent3)}
+.code-block .string{color:var(--accent2)}
+.code-block .type{color:#dcdcaa}
+.code-block .number{color:#b5cea8}
+.code-block .decorator{color:var(--accent)}
+.code-block .param{color:#9cdcfe}
+.code-line{display:block;padding:2px 8px;border-radius:4px;transition:background .2s}
+.code-line:hover{background:rgba(255,255,255,.04)}
+.line-annotation{display:none;background:rgba(0,212,170,.08);border-left:3px solid var(--accent2);padding:8px 12px;margin:4px 0 4px 16px;border-radius:0 8px 8px 0;font-size:12px;color:var(--accent2);font-family:'Noto Sans SC',sans-serif}
+.show-annotations .line-annotation{display:block}
+.toggle-annotations{background:var(--accent3);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif}
+.toggle-annotations:hover{opacity:.85}
+
+/* Visual Cards Grid */
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:20px 0}
+.grid-card{background:var(--bg-card);border-radius:14px;padding:24px;text-align:center;border:1px solid rgba(255,255,255,.06);transition:transform .3s,border-color .3s}
+.grid-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.grid-card .g-icon{font-size:2.5rem;margin-bottom:12px}
+.grid-card h4{color:var(--accent);margin-bottom:8px}
+.grid-card p{font-size:.85rem;color:var(--text-dim)}
+
+/* Quiz */
+.quiz-container{margin:20px 0}
+.quiz-q{background:var(--bg-card);border-radius:14px;padding:24px;margin-bottom:16px;border:1px solid rgba(255,255,255,.06)}
+.quiz-q h4{color:var(--accent);margin-bottom:12px}
+.quiz-q .options{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{background:var(--bg-code);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;cursor:pointer;transition:.2s;font-size:.9rem}
+.quiz-opt:hover{border-color:var(--accent3);background:rgba(124,92,252,.08)}
+.quiz-opt.correct{border-color:var(--accent2);background:rgba(0,212,170,.12);color:var(--accent2)}
+.quiz-opt.wrong{border-color:#ff4757;background:rgba(255,71,87,.1);color:#ff4757}
+.quiz-feedback{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.85rem;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.correct-fb{background:rgba(0,212,170,.1);color:var(--accent2);border:1px solid rgba(0,212,170,.2)}
+.quiz-feedback.wrong-fb{background:rgba(255,71,87,.08);color:#ff4757;border:1px solid rgba(255,71,87,.2)}
+.quiz-score{text-align:center;padding:20px;background:var(--bg-card);border-radius:14px;border:1px solid rgba(255,255,255,.06);margin-top:16px}
+
+/* Deep Dives */
+.deep-dive{background:var(--bg-card);border-radius:16px;border:1px solid rgba(124,92,252,.15);overflow:hidden;margin:20px 0}
+.deep-dive-header{padding:20px 24px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:rgba(124,92,252,.05)}
+.deep-dive-header h4{color:var(--accent3)}
+.deep-dive-header .arrow{transition:transform .3s;color:var(--accent3)}
+.deep-dive.open .deep-dive-header .arrow{transform:rotate(180deg)}
+.deep-dive-body{max-height:0;overflow:hidden;transition:max-height .5s ease;padding:0 24px}
+.deep-dive.open .deep-dive-body{max-height:2000px;padding:0 24px 24px}
+
+/* Summary */
+.summary-card{background:linear-gradient(135deg,rgba(124,92,252,.08),rgba(0,212,170,.05));border:1px solid rgba(124,92,252,.2);border-radius:16px;padding:32px;margin:20px 0}
+.summary-card h3{color:var(--accent3);margin-bottom:16px}
+.summary-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.summary-list li{padding:8px 16px;background:rgba(255,255,255,.03);border-radius:8px;display:flex;align-items:center;gap:10px;font-size:.95rem}
+.summary-list li::before{content:'✓';color:var(--accent2);font-weight:700}
+
+/* Nav */
+.bottom-nav{display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:40px auto 80px;padding:0 24px}
+.nav-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:12px;text-decoration:none;font-size:.95rem;font-weight:500;transition:.2s}
+.nav-btn.prev{background:var(--bg-card);color:var(--text);border:1px solid rgba(255,255,255,.1)}
+.nav-btn.prev:hover{border-color:var(--accent)}
+.nav-btn.next{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff}
+.nav-btn.next:hover{opacity:.9}
+.nav-module{color:var(--text-dim);font-size:.85rem}
+
+/* Inline highlight */
+.hl{color:var(--accent);font-weight:600}
+.hl2{color:var(--accent2);font-weight:600}
+.hl3{color:var(--accent3);font-weight:600}
+
+/* Responsive */
+@media(max-width:768px){.toc-dots{display:none}.grid-3{grid-template-columns:1fr}.brain-diagram{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="toc-dots" id="tocDots">
+  <div class="toc-dot active" data-section="0" title="引言"></div>
+  <div class="toc-dot" data-section="1" title="核心概念"></div>
+  <div class="toc-dot" data-section="2" title="记忆分类"></div>
+  <div class="toc-dot" data-section="3" title="MemoryStore"></div>
+  <div class="toc-dot" data-section="4" title="ContextCompactor"></div>
+  <div class="toc-dot" data-section="5" title="记忆操作"></div>
+  <div class="toc-dot" data-section="6" title="集成示例"></div>
+  <div class="toc-dot" data-section="7" title="测验"></div>
+  <div class="toc-dot" data-section="8" title="深度探索"></div>
+  <div class="toc-dot" data-section="9" title="总结"></div>
+</div>
+
+<!-- Hero -->
+<div class="hero" id="section-0">
+  <div class="hero-badge">05 Planning → <strong>06 记忆系统</strong> → 07</div>
+  <h1>记忆系统</h1>
+  <p class="hero-sub">记住该记的，忘掉该忘的<br>—— 让 Agent 拥有真正的"记忆"</p>
+  <div class="hero-analogy">
+    <h3>🧠 人脑类比：短期记忆 vs 长期记忆</h3>
+    <p style="font-size:.9rem;color:var(--text-dim)">就像人脑有<strong>海马体</strong>负责将短期记忆转化为长期记忆，Agent 也需要一套记忆系统来管理信息。</p>
+    <div class="brain-diagram">
+      <div class="brain-box">
+        <div class="icon">⚡</div>
+        <h4>短期记忆 = 上下文窗口</h4>
+        <p>容量有限，速度快<br>就像你正在对话时记住的内容<br>对话结束就可能遗忘</p>
+      </div>
+      <div class="brain-box">
+        <div class="icon">💾</div>
+        <h4>长期记忆 = SQLite 持久化</h4>
+        <p>容量大，可检索<br>就像写在笔记本上的内容<br>随时可以翻阅回忆</p>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ 向下滚动开始学习</div>
+</div>
+
+<!-- Section 1: Core Concept -->
+<div class="section" id="section-1">
+  <div class="section-num">01</div>
+  <h2>核心概念：记住该记的，忘掉该忘的</h2>
+  <div class="card card-highlight">
+    <p>记忆系统的核心理念是 <span class="hl">选择性记忆</span>——不是记住所有事情，而是</p>
+    <ul style="margin:12px 0 12px 20px">
+      <li>记住 <span class="hl2">重要的</span> 信息（用户偏好、关键决策）</li>
+      <li>记住 <span class="hl2">有用的</span> 信息（项目知识、操作步骤）</li>
+      <li>忘掉 <span class="hl">过时的</span> 信息（低重要性的旧记录）</li>
+      <li>压缩 <span class="hl">冗长的</span> 信息（超出上下文窗口时）</li>
+    </ul>
+  </div>
+  <div class="card card-green">
+    <h3>记忆系统的两大组件</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">
+      <div style="flex:1;min-width:220px;background:var(--bg-code);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:2rem;margin-bottom:8px">🗄️</div>
+        <h4 style="color:var(--accent)">MemoryStore</h4>
+        <p style="font-size:.85rem;color:var(--text-dim)">持久化存储层<br>基于 SQLite<br>负责记忆的增删改查</p>
+      </div>
+      <div style="flex:1;min-width:220px;background:var(--bg-code);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:2rem;margin-bottom:8px">🗜️</div>
+        <h4 style="color:var(--accent2)">ContextCompactor</h4>
+        <p style="font-size:.85rem;color:var(--text-dim)">上下文压缩器<br>三种压缩策略<br>防止上下文溢出</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Memory Categories -->
+<div class="section" id="section-2">
+  <div class="section-num">02</div>
+  <h2>记忆的三种类型</h2>
+  <p>就像图书馆的分类系统，记忆也按照用途分为三种类型：</p>
+  <div class="grid-3">
+    <div class="grid-card" style="border-top:3px solid var(--accent)">
+      <div class="g-icon">📖</div>
+      <h4>情景记忆 (Episodic)</h4>
+      <p style="color:var(--text);margin-bottom:8px"><strong>对话历史</strong></p>
+      <p>记录 Agent 与用户之间的交互过程。就像日记一样，记录"发生了什么"。</p>
+      <div style="margin-top:12px;font-size:.8rem;background:var(--bg-code);padding:10px;border-radius:8px;text-align:left">
+        <span class="comment">// 示例</span><br>
+        <span class="string">"用户上次问了关于部署的问题"</span>
+      </div>
+    </div>
+    <div class="grid-card" style="border-top:3px solid var(--accent2)">
+      <div class="g-icon">🧠</div>
+      <h4>语义记忆 (Semantic)</h4>
+      <p style="color:var(--text);margin-bottom:8px"><strong>用户偏好 & 项目知识</strong></p>
+      <p>存储事实性知识和偏好设定。就像百科全书，记录"知道什么"。</p>
+      <div style="margin-top:12px;font-size:.8rem;background:var(--bg-code);padding:10px;border-radius:8px;text-align:left">
+        <span class="comment">// 示例</span><br>
+        <span class="string">"用户偏好用 TypeScript"</span><br>
+        <span class="string">"项目使用 React + Vite"</span>
+      </div>
+    </div>
+    <div class="grid-card" style="border-top:3px solid var(--accent3)">
+      <div class="g-icon">⚙️</div>
+      <h4>程序记忆 (Procedural)</h4>
+      <p style="color:var(--text);margin-bottom:8px"><strong>操作步骤</strong></p>
+      <p>存储如何完成特定任务的知识。就像操作手册，记录"怎么做"。</p>
+      <div style="margin-top:12px;font-size:.8rem;background:var(--bg-code);padding:10px;border-radius:8px;text-align:left">
+        <span class="comment">// 示例</span><br>
+        <span class="string">"部署流程：build → test → push"</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: MemoryStore -->
+<div class="section" id="section-3">
+  <div class="section-num">03</div>
+  <h2>MemoryStore：持久化记忆存储</h2>
+  <p>MemoryStore 使用 <span class="hl2">SQLite</span> 数据库来持久化存储记忆条目，每个条目包含丰富的元数据。</p>
+
+  <h3>MemoryEntry 数据结构</h3>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent)">id</code><br><span style="font-size:.8rem;color:var(--text-dim)">唯一标识符</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent)">key</code><br><span style="font-size:.8rem;color:var(--text-dim)">记忆键名</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent)">value</code><br><span style="font-size:.8rem;color:var(--text-dim)">记忆内容</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent2)">category</code><br><span style="font-size:.8rem;color:var(--text-dim)">记忆类型</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent2)">importance</code><br><span style="font-size:.8rem;color:var(--text-dim)">重要性 (0-1)</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent3)">created_at</code><br><span style="font-size:.8rem;color:var(--text-dim)">创建时间</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent3)">last_accessed</code><br><span style="font-size:.8rem;color:var(--text-dim)">最后访问时间</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent3)">access_count</code><br><span style="font-size:.8rem;color:var(--text-dim)">访问次数</span></div>
+      <div style="background:var(--bg-code);padding:12px;border-radius:8px"><code style="color:var(--accent)">metadata</code><br><span style="font-size:.8rem;color:var(--text-dim)">额外元数据</span></div>
+    </div>
+  </div>
+
+  <h3>MemoryStore 代码实现</h3>
+  <button class="toggle-annotations" onclick="toggleAnnotations(this)">📝 显示/隐藏逐行注释</button>
+  <div class="code-block">
+    <span class="lang-tag">Python</span>
+    <span class="code-line"><span class="keyword">class</span> <span class="type">MemoryStore</span>:</span>
+    <span class="code-line">    <span class="comment">"""持久化记忆存储，基于 SQLite"""</span></span>
+    <span class="line-annotation">📁 整个记忆系统的持久化层，负责所有记忆的存储和检索</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">def</span> <span class="type">__init__</span>(<span class="param">self</span>, <span class="param">db_path</span>: <span class="type">str</span> = <span class="string">"memory.db"</span>):</span>
+    <span class="line-annotation">💾 db_path 指定 SQLite 数据库文件路径，默认当前目录下的 memory.db</span>
+    <span class="code-line">        <span class="param">self</span>.db_path = <span class="param">db_path</span></span>
+    <span class="code-line">        <span class="param">self</span>._init_db()  <span class="comment"># 初始化数据库表结构</span></span>
+    <span class="line-annotation">🔧 首次启动时自动创建 memories 表</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">add</span>(<span class="param">self</span>, <span class="param">key</span>: <span class="type">str</span>, <span class="param">value</span>: <span class="type">str</span>,</span>
+    <span class="code-line">                 <span class="param">category</span>: <span class="type">str</span> = <span class="string">"semantic"</span>,</span>
+    <span class="code-line">                 <span class="param">importance</span>: <span class="type">float</span> = <span class="number">0.5</span>) -> <span class="type">MemoryEntry</span>:</span>
+    <span class="line-annotation">➕ 添加一条新记忆。importance 范围 0~1，越高越不会被清理</span>
+    <span class="code-line">        <span class="param">entry</span> = <span class="type">MemoryEntry</span>(</span>
+    <span class="code-line">            key=<span class="param">key</span>, value=<span class="param">value</span>,</span>
+    <span class="code-line">            category=<span class="param">category</span>,</span>
+    <span class="code-line">            importance=<span class="param">importance</span>,</span>
+    <span class="code-line">            created_at=datetime.now(),</span>
+    <span class="code-line">            last_accessed=datetime.now(),</span>
+    <span class="code-line">            access_count=<span class="number">0</span></span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">📝 创建 MemoryEntry 对象，记录创建时间和初始访问次数</span>
+    <span class="code-line">        <span class="keyword">await</span> <span class="param">self</span>._save_to_db(<span class="param">entry</span>)</span>
+    <span class="code-line">        <span class="keyword">return</span> <span class="param">entry</span></span>
+    <span class="line-annotation">💾 保存到 SQLite 数据库并返回条目</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">get</span>(<span class="param">self</span>, <span class="param">key</span>: <span class="type">str</span>) -> <span class="type">Optional</span>[<span class="type">MemoryEntry</span>]:</span>
+    <span class="line-annotation">🔍 根据 key 精确查找记忆，同时更新访问时间和次数</span>
+    <span class="code-line">        <span class="param">entry</span> = <span class="keyword">await</span> <span class="param">self</span>._query_db(key=<span class="param">key</span>)</span>
+    <span class="code-line">        <span class="keyword">if</span> <span class="param">entry</span>:</span>
+    <span class="code-line">            <span class="param">entry</span>.access_count += <span class="number">1</span></span>
+    <span class="code-line">            <span class="param">entry</span>.last_accessed = datetime.now()</span>
+    <span class="code-line">            <span class="keyword">await</span> <span class="param">self</span>._update_db(<span class="param">entry</span>)</span>
+    <span class="line-annotation">📊 每次访问都会更新计数器，用于判断记忆的重要性衰减</span>
+    <span class="code-line">        <span class="keyword">return</span> <span class="param">entry</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">search</span>(<span class="param">self</span>, <span class="param">query</span>=<span class="keyword">None</span>, <span class="param">category</span>=<span class="keyword">None</span>,</span>
+    <span class="code-line">                   <span class="param">min_importance</span>=<span class="number">0.0</span>) -> <span class="type">List</span>[<span class="type">MemoryEntry</span>]:</span>
+    <span class="line-annotation">🔎 多维度搜索：可按关键词、分类、最低重要性过滤</span>
+    <span class="code-line">        <span class="keyword">return await</span> <span class="param">self</span>._query_db(</span>
+    <span class="code-line">            query=<span class="param">query</span>, category=<span class="param">category</span>,</span>
+    <span class="code-line">            min_importance=<span class="param">min_importance</span></span>
+    <span class="code-line">        )</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">consolidate</span>(<span class="param">self</span>):</span>
+    <span class="line-annotation">🧹 记忆整合：清理过期的低重要性记忆，释放存储空间</span>
+    <span class="code-line">        <span class="param">old_entries</span> = <span class="keyword">await</span> <span class="param">self</span>._query_db(</span>
+    <span class="code-line">            max_importance=<span class="number">0.3</span>,</span>
+    <span class="code-line">            older_than_days=<span class="number">30</span></span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">📋 选取：重要性 < 0.3 且超过 30 天未访问的记忆</span>
+    <span class="code-line">        <span class="keyword">for</span> <span class="param">entry</span> <span class="keyword">in</span> <span class="param">old_entries</span>:</span>
+    <span class="code-line">            <span class="keyword">await</span> <span class="param">self</span>._delete_from_db(<span class="param">entry</span>.id)</span>
+    <span class="line-annotation">🗑️ 删除这些低价值记忆，就像清理文件柜里的旧文件</span>
+  </div>
+</div>
+
+<!-- Section 4: ContextCompactor -->
+<div class="section" id="section-4">
+  <div class="section-num">04</div>
+  <h2>ContextCompactor：上下文压缩器</h2>
+  <p>当对话消息超过上下文窗口阈值时，ContextCompactor 会自动压缩消息，<span class="hl">防止上下文溢出</span>。</p>
+
+  <button class="toggle-annotations" onclick="toggleAnnotations(this)">📝 显示/隐藏逐行注释</button>
+  <div class="code-block">
+    <span class="lang-tag">Python</span>
+    <span class="code-line"><span class="keyword">class</span> <span class="type">ContextCompactor</span>:</span>
+    <span class="code-line">    <span class="comment">"""上下文压缩器，自动管理对话历史的长度"""</span></span>
+    <span class="line-annotation">🗜️ 当消息数量超过阈值时，自动压缩旧消息</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">def</span> <span class="type">__init__</span>(<span class="param">self</span>, <span class="param">max_messages</span>=<span class="number">50</span>, <span class="param">strategy</span>=<span class="string">"smart"</span>):</span>
+    <span class="line-annotation">⚙️ max_messages: 触发压缩的阈值 | strategy: 压缩策略</span>
+    <span class="code-line">        <span class="param">self</span>.max_messages = <span class="param">max_messages</span></span>
+    <span class="code-line">        <span class="param">self</span>.strategy = <span class="param">strategy</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">compact</span>(<span class="param">self</span>, <span class="param">messages</span>: <span class="type">List</span>[<span class="type">Message</span>]) -> <span class="type">List</span>[<span class="type">Message</span>]:</span>
+    <span class="line-annotation">🔧 核心方法：检查消息数量，超过阈值则执行压缩</span>
+    <span class="code-line">        <span class="keyword">if</span> <span class="keyword">len</span>(<span class="param">messages</span>) <= <span class="param">self</span>.max_messages:</span>
+    <span class="code-line">            <span class="keyword">return</span> <span class="param">messages</span>  <span class="comment"># 未超限，原样返回</span></span>
+    <span class="line-annotation">✅ 消息数量在阈值内，无需压缩</span>
+    <span class="code-line"></span>
+    <span class="code-line">        <span class="keyword">if</span> <span class="param">self</span>.strategy == <span class="string">"simple"</span>:</span>
+    <span class="code-line">            <span class="keyword">return await</span> <span class="param">self</span>._simple_compact(<span class="param">messages</span>)</span>
+    <span class="code-line">        <span class="keyword">elif</span> <span class="param">self</span>.strategy == <span class="string">"smart"</span>:</span>
+    <span class="code-line">            <span class="keyword">return await</span> <span class="param">self</span>._smart_compact(<span class="param">messages</span>)</span>
+    <span class="code-line">        <span class="keyword">elif</span> <span class="param">self</span>.strategy == <span class="string">"summary"</span>:</span>
+    <span class="code-line">            <span class="keyword">return await</span> <span class="param">self</span>._summary_compact(<span class="param">messages</span>)</span>
+    <span class="line-annotation">🔀 根据选择的策略执行对应的压缩算法</span>
+  </div>
+
+  <h3>三种压缩策略对比</h3>
+  <div class="grid-3">
+    <div class="grid-card" style="border-top:3px solid var(--accent)">
+      <div class="g-icon">✂️</div>
+      <h4>Simple 策略</h4>
+      <p><strong>保留最近的消息</strong></p>
+      <p style="font-size:.8rem;margin-top:8px">最简单粗暴：只保留最近 N 条消息，丢弃更早的。像撕掉笔记本的前几页。</p>
+      <div style="margin-top:12px;font-size:.78rem;background:var(--bg-code);padding:8px;border-radius:6px">
+        <span class="comment">// messages[-max_messages:]</span>
+      </div>
+    </div>
+    <div class="grid-card" style="border-top:3px solid var(--accent2)">
+      <div class="g-icon">🎯</div>
+      <h4>Smart 策略</h4>
+      <p><strong>保留重要 + 工具调用 + 首尾</strong></p>
+      <p style="font-size:.8rem;margin-top:8px">智能选择：保留重要消息、含工具调用的消息、以及第一条和最后一条。</p>
+      <div style="margin-top:12px;font-size:.78rem;background:var(--bg-code);padding:8px;border-radius:6px">
+        <span class="comment">// 重要性排序 + 关键消息保护</span>
+      </div>
+    </div>
+    <div class="grid-card" style="border-top:3px solid var(--accent3)">
+      <div class="g-icon">📝</div>
+      <h4>Summary 策略</h4>
+      <p><strong>LLM 生成摘要</strong></p>
+      <p style="font-size:.8rem;margin-top:8px">用 LLM 将旧消息总结为一段摘要，替换原始消息。信息保留最完整。</p>
+      <div style="margin-top:12px;font-size:.78rem;background:var(--bg-code);padding:8px;border-radius:6px">
+        <span class="comment">// LLM summarize → replace old msgs</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 5: Memory Operations -->
+<div class="section" id="section-5">
+  <div class="section-num">05</div>
+  <h2>记忆操作示例</h2>
+  <p>让我们通过实际例子看看记忆系统的四种核心操作：</p>
+
+  <div class="card card-highlight">
+    <h3>💾 保存记忆 (Save)</h3>
+    <div class="code-block">
+      <span class="lang-tag">Python</span>
+      <span class="code-line"><span class="comment"># 保存用户的偏好设置</span></span>
+      <span class="code-line"><span class="keyword">await</span> memory_store.<span class="type">add</span>(</span>
+      <span class="code-line">    key=<span class="string">"user_pref_language"</span>,</span>
+      <span class="code-line">    value=<span class="string">"TypeScript"</span>,</span>
+      <span class="code-line">    category=<span class="string">"semantic"</span>,</span>
+      <span class="code-line">    importance=<span class="number">0.8</span></span>
+      <span class="code-line">)</span>
+    </div>
+  </div>
+
+  <div class="card card-green">
+    <h3>🔍 回忆记忆 (Recall)</h3>
+    <div class="code-block">
+      <span class="lang-tag">Python</span>
+      <span class="code-line"><span class="comment"># 根据 key 检索特定记忆</span></span>
+      <span class="code-line"><span class="param">pref</span> = <span class="keyword">await</span> memory_store.<span class="type">get</span>(<span class="string">"user_pref_language"</span>)</span>
+      <span class="code-line"><span class="keyword">print</span>(<span class="param">pref</span>.value)  <span class="comment"># → "TypeScript"</span></span>
+    </div>
+  </div>
+
+  <div class="card card-purple">
+    <h3>🔎 搜索记忆 (Search)</h3>
+    <div class="code-block">
+      <span class="lang-tag">Python</span>
+      <span class="code-line"><span class="comment"># 按分类搜索所有语义记忆</span></span>
+      <span class="code-line"><span class="param">memories</span> = <span class="keyword">await</span> memory_store.<span class="type">search</span>(</span>
+      <span class="code-line">    category=<span class="string">"semantic"</span>,</span>
+      <span class="code-line">    min_importance=<span class="number">0.5</span></span>
+      <span class="code-line">)</span>
+      <span class="code-line"></span>
+      <span class="code-line"><span class="comment"># 按关键词搜索</span></span>
+      <span class="code-line"><span class="param">results</span> = <span class="keyword">await</span> memory_store.<span class="type">search</span>(query=<span class="string">"部署"</span>)</span>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--accent)">
+    <h3>🗜️ 压缩上下文 (Compact)</h3>
+    <div class="code-block">
+      <span class="lang-tag">Python</span>
+      <span class="code-line"><span class="comment"># 当对话过长时自动压缩</span></span>
+      <span class="code-line"><span class="param">compactor</span> = <span class="type">ContextCompactor</span>(max_messages=<span class="number">50</span>)</span>
+      <span class="code-line"><span class="param">messages</span> = <span class="keyword">await</span> <span class="param">compactor</span>.<span class="type">compact</span>(<span class="param">messages</span>)</span>
+      <span class="code-line"><span class="comment"># 压缩后的消息更短，但仍保留关键信息</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Section 6: Integration -->
+<div class="section" id="section-6">
+  <div class="section-num">06</div>
+  <h2>集成到 Agent 中</h2>
+  <p>记忆系统如何与 Agent 整合？看这个完整的集成流程：</p>
+
+  <div class="card card-highlight">
+    <h3>🔄 记忆集成流程</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:16px 0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:var(--accent);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div>
+        <div><strong>加载相关记忆</strong><br><span style="font-size:.85rem;color:var(--text-dim)">从 MemoryStore 检索与当前任务相关的记忆</span></div>
+      </div>
+      <div style="text-align:center;color:var(--text-dim)">↓</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:var(--accent2);color:#000;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div>
+        <div><strong>注入到系统提示词</strong><br><span style="font-size:.85rem;color:var(--text-dim)">将记忆作为上下文注入 system prompt</span></div>
+      </div>
+      <div style="text-align:center;color:var(--text-dim)">↓</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:var(--accent3);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div>
+        <div><strong>检查是否需要压缩</strong><br><span style="font-size:.85rem;color:var(--text-dim)">ContextCompactor 检查消息是否超过阈值</span></div>
+      </div>
+      <div style="text-align:center;color:var(--text-dim)">↓</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:var(--accent);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">4</div>
+        <div><strong>执行压缩（如需要）</strong><br><span style="font-size:.85rem;color:var(--text-dim)">使用选定策略压缩消息，保留关键信息</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="toggle-annotations" onclick="toggleAnnotations(this)">📝 显示/隐藏逐行注释</button>
+  <div class="code-block">
+    <span class="lang-tag">Python</span>
+    <span class="code-line"><span class="keyword">class</span> <span class="type">Agent</span>:</span>
+    <span class="code-line">    <span class="keyword">def</span> <span class="type">__init__</span>(<span class="param">self</span>):</span>
+    <span class="code-line">        <span class="param">self</span>.memory = <span class="type">MemoryStore</span>(<span class="string">"agent_memory.db"</span>)</span>
+    <span class="code-line">        <span class="param">self</span>.compactor = <span class="type">ContextCompactor</span>(max_messages=<span class="number">50</span>)</span>
+    <span class="line-annotation">🔧 初始化记忆存储和上下文压缩器</span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">async def</span> <span class="type">process_message</span>(<span class="param">self</span>, <span class="param">user_msg</span>: <span class="type">str</span>):</span>
+    <span class="code-line">        <span class="comment"># 第一步：加载相关记忆</span></span>
+    <span class="code-line">        <span class="param">relevant</span> = <span class="keyword">await</span> <span class="param">self</span>.memory.<span class="type">search</span>(</span>
+    <span class="code-line">            query=<span class="param">user_msg</span>,</span>
+    <span class="code-line">            min_importance=<span class="number">0.3</span></span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">🔍 根据用户消息搜索相关记忆，最低重要性 0.3</span>
+    <span class="code-line"></span>
+    <span class="code-line">        <span class="comment"># 第二步：注入到系统提示词</span></span>
+    <span class="code-line">        <span class="param">system_prompt</span> = <span class="param">self</span>._build_prompt(</span>
+    <span class="code-line">            base=<span class="param">self</span>.base_prompt,</span>
+    <span class="code-line">            memories=<span class="param">relevant</span></span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">💉 将相关记忆格式化后注入系统提示词</span>
+    <span class="code-line"></span>
+    <span class="code-line">        <span class="comment"># 第三步：检查是否需要压缩</span></span>
+    <span class="code-line">        <span class="param">self</span>.messages = <span class="keyword">await</span> <span class="param">self</span>.compactor.<span class="type">compact</span>(</span>
+    <span class="code-line">            <span class="param">self</span>.messages</span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">🗜️ 超过 50 条消息时自动压缩</span>
+    <span class="code-line"></span>
+    <span class="code-line">        <span class="comment"># 第四步：正常处理</span></span>
+    <span class="code-line">        <span class="param">response</span> = <span class="keyword">await</span> <span class="param">self</span>.llm.<span class="type">chat</span>(</span>
+    <span class="code-line">            system=<span class="param">system_prompt</span>,</span>
+    <span class="code-line">            messages=<span class="param">self</span>.messages</span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">🤖 带着记忆上下文，正常调用 LLM</span>
+    <span class="code-line"></span>
+    <span class="code-line">        <span class="comment"># 第五步：保存新记忆</span></span>
+    <span class="code-line">        <span class="keyword">await</span> <span class="param">self</span>.memory.<span class="type">add</span>(</span>
+    <span class="code-line">            key=<span class="string">f"conv_</span>{datetime.now().timestamp()}<span class="string">"</span>,</span>
+    <span class="code-line">            value=<span class="param">user_msg</span>,</span>
+    <span class="code-line">            category=<span class="string">"episodic"</span></span>
+    <span class="code-line">        )</span>
+    <span class="line-annotation">💾 将对话记录保存为情景记忆</span>
+  </div>
+</div>
+
+<!-- Section 7: Quiz -->
+<div class="section" id="section-7">
+  <div class="section-num">07</div>
+  <h2>🧪 知识测验</h2>
+  <p>检验一下你对记忆系统的理解吧！</p>
+
+  <div class="quiz-container" id="quiz">
+    <!-- Q1 -->
+    <div class="quiz-q">
+      <h4>Q1: MemoryStore 使用什么数据库来持久化存储记忆？</h4>
+      <div class="options">
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">A. MongoDB</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'correct')">B. SQLite</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">C. Redis</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">D. PostgreSQL</div>
+      </div>
+      <div class="quiz-feedback correct-fb">✅ 正确！MemoryStore 使用 SQLite 进行轻量级本地持久化存储。</div>
+      <div class="quiz-feedback wrong-fb">❌ 不对哦，MemoryStore 使用的是 SQLite 数据库。</div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-q">
+      <h4>Q2: 以下哪种不属于记忆的三种类型？</h4>
+      <div class="options">
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">A. 情景记忆 (Episodic)</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">B. 语义记忆 (Semantic)</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">C. 程序记忆 (Procedural)</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'correct')">D. 工作记忆 (Working)</div>
+      </div>
+      <div class="quiz-feedback correct-fb">✅ 正确！记忆系统只有三种类型：情景、语义和程序记忆，不包含工作记忆。</div>
+      <div class="quiz-feedback wrong-fb">❌ 不对哦，"工作记忆"不在三种记忆类型中。正确答案是 D。</div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-q">
+      <h4>Q3: ContextCompactor 的 "smart" 策略保留哪些消息？</h4>
+      <div class="options">
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">A. 只保留最近的 N 条</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'correct')">B. 重要消息 + 工具调用 + 首条和末条</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">C. 用 LLM 生成摘要替换</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">D. 随机保留一半消息</div>
+      </div>
+      <div class="quiz-feedback correct-fb">✅ 正确！Smart 策略通过重要性排序、保护工具调用消息和首尾消息来智能选择保留内容。</div>
+      <div class="quiz-feedback wrong-fb">❌ 不对哦，A 是 simple 策略，C 是 summary 策略。Smart 答案是 B。</div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-q">
+      <h4>Q4: consolidate() 操作会清理什么样的记忆？</h4>
+      <div class="options">
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">A. 所有超过 7 天的记忆</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'correct')">B. 低重要性且长时间未访问的记忆</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">C. 最近 30 天的高重要性记忆</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">D. 所有情景记忆</div>
+      </div>
+      <div class="quiz-feedback correct-fb">✅ 正确！consolidate 清理重要性 < 0.3 且超过 30 天未访问的低价值记忆。</div>
+      <div class="quiz-feedback wrong-fb">❌ 不对哦，consolidate 只清理低重要性（< 0.3）且超过 30 天未访问的记忆。答案是 B。</div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="quiz-q">
+      <h4>Q5: 记忆集成到 Agent 的正确顺序是？</h4>
+      <div class="options">
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">A. 压缩 → 加载 → 注入 → 保存</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">B. 注入 → 加载 → 保存 → 压缩</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'correct')">C. 加载 → 注入 → 检查压缩 → 执行压缩</div>
+        <div class="quiz-opt" onclick="checkAnswer(this,'wrong')">D. 保存 → 加载 → 注入 → 压缩</div>
+      </div>
+      <div class="quiz-feedback correct-fb">✅ 正确！标准流程是：加载相关记忆 → 注入系统提示词 → 检查是否需要压缩 → 如需要则执行压缩。</div>
+      <div class="quiz-feedback wrong-fb">❌ 不对哦，正确顺序是 C：加载 → 注入 → 检查压缩 → 执行压缩。</div>
+    </div>
+
+    <div class="quiz-score" id="quizScore" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Section 8: Deep Dives -->
+<div class="section" id="section-8">
+  <div class="section-num">08</div>
+  <h2>🔬 深度探索</h2>
+
+  <div class="deep-dive">
+    <div class="deep-dive-header" onclick="toggleDeepDive(this)">
+      <h4>深度探索 1：重要性评分算法</h4>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <p>记忆的 <span class="hl">importance</span> 分数不是静态的，它会随时间衰减。评分算法考虑以下因素：</p>
+      <div class="code-block">
+        <span class="lang-tag">Algorithm</span>
+        <span class="code-line"><span class="comment"># 动态重要性评分 = 基础分 × 时间衰减 × 访问频率加成</span></span>
+        <span class="code-line"></span>
+        <span class="code-line">score = base_importance</span>
+        <span class="code-line">  × decay(days_since_access)     <span class="comment"># 时间越久，分越低</span></span>
+        <span class="code-line">  × frequency_boost(access_count) <span class="comment"># 访问越多，分越高</span></span>
+        <span class="code-line"></span>
+        <span class="code-line"><span class="comment"># 衰减函数：指数衰减</span></span>
+        <span class="code-line">decay(t) = e^(-λt), λ = <span class="number">0.01</span></span>
+        <span class="code-line"></span>
+        <span class="code-line"><span class="comment"># 频率加成：对数增长</span></span>
+        <span class="code-line">frequency_boost(n) = <span class="number">1</span> + log(<span class="number">1</span> + n) × <span class="number">0.1</span></span>
+      </div>
+      <p style="margin-top:12px"><strong>设计思路：</strong>就像人类记忆一样，经常被回忆的事情不容易遗忘（访问频率加成），而长期不用的记忆会慢慢模糊（时间衰减）。这种机制确保了 Agent 的记忆"活"起来，常用常新，不用则淡。</p>
+    </div>
+  </div>
+
+  <div class="deep-dive">
+    <div class="deep-dive-header" onclick="toggleDeepDive(this)">
+      <h4>深度探索 2：何时进行记忆整合 (Consolidate)</h4>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <p>记忆整合的触发时机很关键：</p>
+      <div style="margin:16px 0">
+        <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+          <tr style="border-bottom:1px solid rgba(255,255,255,.08)">
+            <td style="padding:10px;color:var(--accent);font-weight:600">触发条件</td>
+            <td style="padding:10px;color:var(--accent2);font-weight:600">说明</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:10px">定时触发</td>
+            <td style="padding:10px">每天/每周自动执行一次清理</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:10px">阈值触发</td>
+            <td style="padding:10px">记忆总数超过设定上限时</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:10px">手动触发</td>
+            <td style="padding:10px">用户或管理员主动调用</td>
+          </tr>
+          <tr>
+            <td style="padding:10px">空闲触发</td>
+            <td style="padding:10px">Agent 空闲时后台自动执行</td>
+          </tr>
+        </table>
+      </div>
+      <p><strong>最佳实践：</strong>建议在 Agent 空闲时定期执行 consolidate，而不是在处理用户请求时。就像图书馆会在闭馆后整理书架，而不是在读者借书时。</p>
+    </div>
+  </div>
+
+  <div class="deep-dive">
+    <div class="deep-dive-header" onclick="toggleDeepDive(this)">
+      <h4>深度探索 3：Smart 压缩启发式算法</h4>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="deep-dive-body">
+      <p>Smart 策略的"智能"体现在它的启发式选择算法：</p>
+      <div class="code-block">
+        <span class="lang-tag">Heuristic</span>
+        <span class="code-line"><span class="comment"># 每条消息的保留优先级 = f(类型, 位置, 工具调用)</span></span>
+        <span class="code-line"></span>
+        <span class="code-line"><span class="keyword">def</span> <span class="type">retention_score</span>(msg, index, total):</span>
+    <span class="code-line">    score = <span class="number">0</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="comment"># 首条消息（设定了对话背景）</span></span>
+    <span class="code-line">    <span class="keyword">if</span> index == <span class="number">0</span>: score += <span class="number">10</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="comment"># 末条消息（最近的上下文）</span></span>
+    <span class="code-line">    <span class="keyword">if</span> index == total - <span class="number">1</span>: score += <span class="number">10</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="comment"># 包含工具调用（有重要操作记录）</span></span>
+    <span class="code-line">    <span class="keyword">if</span> msg.has_tool_calls: score += <span class="number">8</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="comment"># 最近的消息（时效性强）</span></span>
+    <span class="code-line">    recency = <span class="number">1</span> - (index / total)</span>
+    <span class="code-line">    score += recency × <span class="number">5</span></span>
+    <span class="code-line"></span>
+    <span class="code-line">    <span class="keyword">return</span> score</span>
+      </div>
+      <p style="margin-top:12px"><strong>核心洞察：</strong>首尾消息之所以重要，是因为首条消息设定了整个对话的背景和目标，末条消息是最新的上下文。中间的消息虽然可能包含有价值的信息，但优先级相对较低。这个算法就像翻书时会特别注意第一页和最后一页。</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 9: Summary -->
+<div class="section" id="section-9">
+  <div class="section-num">09</div>
+  <h2>📋 本章总结</h2>
+
+  <div class="summary-card">
+    <h3>🧠 记忆系统核心要点</h3>
+    <ul class="summary-list">
+      <li><strong>记忆 = Agent 的大脑</strong> — 短期记忆（上下文窗口）+ 长期记忆（SQLite 持久化）</li>
+      <li><strong>两大组件</strong> — MemoryStore 负责持久化存储，ContextCompactor 负责上下文压缩</li>
+      <li><strong>三种记忆类型</strong> — 情景（对话历史）、语义（知识偏好）、程序（操作步骤）</li>
+      <li><strong>MemoryEntry 包含 9 个字段</strong> — id, key, value, category, importance, created_at, last_accessed, access_count, metadata</li>
+      <li><strong>四种核心操作</strong> — add（保存）、get（回忆）、search（搜索）、consolidate（整合清理）</li>
+      <li><strong>三种压缩策略</strong> — Simple（保留最近）、Smart（智能选择）、Summary（LLM 摘要）</li>
+      <li><strong>集成四步走</strong> — 加载记忆 → 注入提示词 → 检查压缩 → 执行压缩</li>
+      <li><strong>核心理念</strong> — 记住该记的，忘掉该忘的</li>
+    </ul>
+  </div>
+
+  <div class="card" style="text-align:center;padding:32px">
+    <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+    <h3 style="color:var(--accent2)">恭喜完成「记忆系统」的学习！</h3>
+    <p style="color:var(--text-dim);margin-top:8px">你已经理解了 Agent 如何像人脑一样管理记忆。<br>下一章我们将探索更高级的主题。</p>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <a href="teach-planning-system.html">← 上一节</a>
+    <span style="color:var(--text-dim);font-size:0.85rem">MODULE 6/11</span>
+    <a href="teach-team-collaboration.html">下一节 →</a>
+</nav>
+
+<script>
+// Progress bar
+function updateProgress(){
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  const p=(window.scrollY/h)*100;
+  document.getElementById('progressBar').style.width=p+'%';
+}
+window.addEventListener('scroll',updateProgress);
+
+// Scroll reveal
+const sections=document.querySelectorAll('.section');
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:0.1});
+sections.forEach(s=>observer.observe(s));
+
+// TOC dots
+const dots=document.querySelectorAll('.toc-dot');
+const allSections=document.querySelectorAll('[id^="section-"]');
+const sectionObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const idx=e.target.id.split('-')[1];
+      dots.forEach(d=>d.classList.remove('active'));
+      const activeDot=document.querySelector(`.toc-dot[data-section="${idx}"]`);
+      if(activeDot)activeDot.classList.add('active');
+    }
+  });
+},{threshold:0.3});
+allSections.forEach(s=>sectionObserver.observe(s));
+dots.forEach(d=>{
+  d.addEventListener('click',()=>{
+    const target=document.getElementById('section-'+d.dataset.section);
+    if(target)target.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+// Toggle annotations
+function toggleAnnotations(btn){
+  btn.parentElement.querySelector('.code-block').classList.toggle('show-annotations');
+}
+
+// Quiz
+let answered=0,correct=0;
+function checkAnswer(opt,type){
+  const q=opt.closest('.quiz-q');
+  if(q.dataset.answered)return;
+  q.dataset.answered='true';
+  answered++;
+  if(type==='correct'){correct++;opt.classList.add('correct');q.querySelector('.correct-fb').classList.add('show')}
+  else{opt.classList.add('wrong');q.querySelector('.wrong-fb').classList.add('show');q.querySelector('.correct').classList.remove('show')}
+  // highlight correct answer
+  q.querySelectorAll('.quiz-opt').forEach(o=>{if(o!==opt&&o.onclick.toString().includes("correct"))o.classList.add('correct')});
+  if(answered===5){
+    const sc=document.getElementById('quizScore');
+    sc.style.display='block';
+    sc.innerHTML=`<div style="font-size:2rem;margin-bottom:8px">${correct===5?'🏆':correct>=3?'👏':'💪'}</div><h3 style="color:var(--accent)">得分：${correct} / 5</h3><p style="color:var(--text-dim);margin-top:8px">${correct===5?'完美！你已经完全掌握了记忆系统！':correct>=3?'做得不错！再复习一下薄弱的部分。':'建议重新阅读本章内容后再试一次。'}</p>`;
+  }
+}
+
+// Deep dives
+function toggleDeepDive(header){
+  header.closest('.deep-dive').classList.toggle('open');
+}
+</script>
+</body>
+</html>
